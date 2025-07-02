@@ -1,9 +1,7 @@
 <<<<<<< HEAD
-# dodo-the-avenger
-=======
-# GDD Space Invaders Project Starter
+# 🦤 Dodo the Avenger
 
-This is a starting codebase for GDD Project.
+A retro-style side-scrolling shooter game where you play as the last dodo, fighting back against extinction. Dodge bullets, collect power food, and avenge your species in an epic two-stage battle for survival.
 
 ## References
 This project is based from this 
