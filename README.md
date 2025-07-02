@@ -5,5 +5,5 @@ A retro-style side-scrolling shooter game where you play as the last dodo, fight
 
 ## References
 This project is based from this 
-[Space Invader](https://github.com/janbodnar/Java-Space-Invaders) repository.
+[Space Invader](mchayapol/gdd-space-invaders-project) repository.
 >>>>>>> 1a85ce8 (Init)
