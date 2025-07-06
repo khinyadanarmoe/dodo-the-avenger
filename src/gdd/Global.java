@@ -7,8 +7,8 @@ public class Global {
 
     public static final int SCALE_FACTOR = 3; // Scaling factor for sprites
 
-    public static final int BOARD_WIDTH = 716; // Doubled from 358
-    public static final int BOARD_HEIGHT = 700; // Doubled from 350
+    public static final int BOARD_WIDTH = 1280; // Doubled from 640
+    public static final int BOARD_HEIGHT = 720; // Doubled from 360
     public static final int BORDER_RIGHT = 60; // Doubled from 30
     public static final int BORDER_LEFT = 10; // Doubled from 5
 
@@ -30,9 +30,22 @@ public class Global {
 
     // Images
     public static final String IMG_ENEMY = "src/images/alien.png";
-    public static final String IMG_PLAYER = "src/images/player.png";
+    public static final String IMG_PLAYER = "src/images/megaman-sprite.png";
     public static final String IMG_SHOT = "src/images/shot.png";
     public static final String IMG_EXPLOSION = "src/images/explosion.png";
     public static final String IMG_TITLE = "src/images/title.png";
     public static final String IMG_POWERUP_SPEEDUP = "src/images/powerup-s.png";
+    
+    //background
+    public static final String IMG_BACKGROUND = "src/images/background.png";
+    //game start
+    public static final String IMG_START = "src/images/game_start.png";
+    // game pause
+    public static final String IMG_PAUSE = "src/images/game_pause.png";
+    // game over
+    public static final String IMG_GAME_OVER = "src/images/game_over.png";
+    // game win
+    public static final String IMG_GAME_WIN = "src/images/game_win.png";
+
+
 }

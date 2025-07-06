@@ -30,5 +30,8 @@ public class Explosion extends Sprite {
         // this.x += direction;
     }
 
-
+    @Override
+    public void act() {
+        // Explosion doesn't move, so this can be empty
+    }
 }

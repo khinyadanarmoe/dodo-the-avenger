@@ -8,6 +8,7 @@ import gdd.powerup.PowerUp;
 import gdd.powerup.SpeedUp;
 import gdd.sprite.Alien1;
 import gdd.sprite.Enemy;
+import gdd.sprite.Enemy.Bomb;
 import gdd.sprite.Explosion;
 import gdd.sprite.Player;
 import gdd.sprite.Shot;
@@ -30,6 +31,11 @@ import javax.swing.Timer;
 
 public class Scene1 extends JPanel {
 
+    // state overlay
+    private boolean isPaused = false;
+    private boolean isGameOver = false;
+    private boolean isGameWon = false;
+
     private int frame = 0;
     private List<PowerUp> powerups;
     private List<Enemy> enemies;
@@ -47,7 +53,7 @@ public class Scene1 extends JPanel {
     private int deaths = 0;
 
     private boolean inGame = true;
-    private String message = "Game Over";
+    private String gameOverMessage = "Game Over";
 
     private final Dimension d = new Dimension(BOARD_WIDTH, BOARD_HEIGHT);
     private final Random randomizer = new Random();
@@ -59,30 +65,30 @@ public class Scene1 extends JPanel {
     // TODO load this map from a file
     private int mapOffset = 0;
     private final int[][] MAP = {
-        {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-        {0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-        {0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-        {0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0},
-        {0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0},
-        {0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0},
-        {0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0},
-        {0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0},
-        {0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0},
-        {0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0},
-        {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0},
-        {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-        {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-        {0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-        {0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-        {0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0},
-        {0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0},
-        {0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0},
-        {0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0},
-        {0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0},
-        {0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0},
-        {0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0},
-        {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0},
-        {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1}
+            { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+            { 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+            { 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+            { 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0 },
+            { 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0 },
+            { 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0 },
+            { 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0 },
+            { 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0 },
+            { 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0 },
+            { 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0 },
+            { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0 },
+            { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },
+            { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+            { 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+            { 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+            { 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0 },
+            { 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0 },
+            { 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0 },
+            { 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0 },
+            { 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0 },
+            { 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0 },
+            { 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0 },
+            { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0 },
+            { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 }
     };
 
     private HashMap<Integer, SpawnDetails> spawnMap = new HashMap<>();
@@ -170,65 +176,22 @@ public class Scene1 extends JPanel {
         // shot = new Shot();
     }
 
-    private void drawMap(Graphics g) {
-        // Draw scrolling starfield background
+    private void drawBackground(Graphics g) {
+        ImageIcon ii = new ImageIcon(IMG_BACKGROUND);
+        int bgWidth = BOARD_WIDTH; // scale width to fit board
+        int bgHeight = BOARD_HEIGHT; // scale height to fit board
 
-        // Calculate smooth scrolling offset (1 pixel per frame)
-        int scrollOffset = (frame) % BLOCKHEIGHT;
+        // Dynamic scroll speed
+        int scrollSpeed = 2;
+        int scrollOffset = (frame * scrollSpeed) % bgWidth;
 
-        // Calculate which rows to draw based on screen position
-        int baseRow = (frame) / BLOCKHEIGHT;
-        int rowsNeeded = (BOARD_HEIGHT / BLOCKHEIGHT) + 2; // +2 for smooth scrolling
+        int x1 = -scrollOffset;
+        int x2 = x1 + bgWidth;
 
-        // Loop through rows that should be visible on screen
-        for (int screenRow = 0; screenRow < rowsNeeded; screenRow++) {
-            // Calculate which MAP row to use (with wrapping)
-            int mapRow = (baseRow + screenRow) % MAP.length;
-
-            // Calculate Y position for this row
-            // int y = (screenRow * BLOCKHEIGHT) - scrollOffset;
-            int y = BOARD_HEIGHT - ( (screenRow * BLOCKHEIGHT) - scrollOffset );
-
-            // Skip if row is completely off-screen
-            if (y > BOARD_HEIGHT || y < -BLOCKHEIGHT) {
-                continue;
-            }
-
-            // Draw each column in this row
-            for (int col = 0; col < MAP[mapRow].length; col++) {
-                if (MAP[mapRow][col] == 1) {
-                    // Calculate X position
-                    int x = col * BLOCKWIDTH;
-
-                    // Draw a cluster of stars
-                    drawStarCluster(g, x, y, BLOCKWIDTH, BLOCKHEIGHT);
-                }
-            }
+        if (inGame) {
+            g.drawImage(ii.getImage(), x1, 0, bgWidth, bgHeight, this);
+            g.drawImage(ii.getImage(), x2, 0, bgWidth, bgHeight, this);
         }
-
-    }
-
-    private void drawStarCluster(Graphics g, int x, int y, int width, int height) {
-        // Set star color to white
-        g.setColor(Color.WHITE);
-
-        // Draw multiple stars in a cluster pattern
-        // Main star (larger)
-        int centerX = x + width / 2;
-        int centerY = y + height / 2;
-        g.fillOval(centerX - 2, centerY - 2, 4, 4);
-
-        // Smaller surrounding stars
-        g.fillOval(centerX - 15, centerY - 10, 2, 2);
-        g.fillOval(centerX + 12, centerY - 8, 2, 2);
-        g.fillOval(centerX - 8, centerY + 12, 2, 2);
-        g.fillOval(centerX + 10, centerY + 15, 2, 2);
-
-        // Tiny stars for more detail
-        g.fillOval(centerX - 20, centerY + 5, 1, 1);
-        g.fillOval(centerX + 18, centerY - 15, 1, 1);
-        g.fillOval(centerX - 5, centerY - 18, 1, 1);
-        g.fillOval(centerX + 8, centerY + 20, 1, 1);
     }
 
     private void drawAliens(Graphics g) {
@@ -271,9 +234,7 @@ public class Scene1 extends JPanel {
         }
 
         if (player.isDying()) {
-
-            player.die();
-            inGame = false;
+            // Player death handled in checkGameOver()
         }
     }
 
@@ -290,10 +251,10 @@ public class Scene1 extends JPanel {
     private void drawBombing(Graphics g) {
 
         // for (Enemy e : enemies) {
-        //     Enemy.Bomb b = e.getBomb();
-        //     if (!b.isDestroyed()) {
-        //         g.drawImage(b.getImage(), b.getX(), b.getY(), this);
-        //     }
+        // Enemy.Bomb b = e.getBomb();
+        // if (!b.isDestroyed()) {
+        // g.drawImage(b.getImage(), b.getX(), b.getY(), this);
+        // }
         // }
     }
 
@@ -333,47 +294,87 @@ public class Scene1 extends JPanel {
         g.setColor(Color.green);
 
         if (inGame) {
-
-            drawMap(g);  // Draw background stars first
+            drawBackground(g);
             drawExplosions(g);
             drawPowreUps(g);
             drawAliens(g);
             drawPlayer(g);
             drawShot(g);
-
-        } else {
-
-            if (timer.isRunning()) {
-                timer.stop();
+            
+            if (isPaused) {
+                System.out.println("isPaused is true, calling drawPauseOverlay");
+                drawPauseOverlay(g);
             }
-
-            gameOver(g);
+        } else {
+            drawGameOver(g);
         }
 
         Toolkit.getDefaultToolkit().sync();
     }
 
-    private void gameOver(Graphics g) {
 
+
+    private void drawGameOver(Graphics g) {
         g.setColor(Color.black);
         g.fillRect(0, 0, BOARD_WIDTH, BOARD_HEIGHT);
 
         g.setColor(new Color(0, 32, 48));
-        g.fillRect(50, BOARD_WIDTH / 2 - 30, BOARD_WIDTH - 100, 50);
+        g.fillRect(50, BOARD_HEIGHT / 2 - 30, BOARD_WIDTH - 100, 50);
         g.setColor(Color.white);
-        g.drawRect(50, BOARD_WIDTH / 2 - 30, BOARD_WIDTH - 100, 50);
+        g.drawRect(50, BOARD_HEIGHT / 2 - 30, BOARD_WIDTH - 100, 50);
 
-        var small = new Font("Helvetica", Font.BOLD, 14);
-        var fontMetrics = this.getFontMetrics(small);
+        var large = new Font("Helvetica", Font.BOLD, 36);
+        var fontMetrics = this.getFontMetrics(large);
 
         g.setColor(Color.white);
-        g.setFont(small);
-        g.drawString(message, (BOARD_WIDTH - fontMetrics.stringWidth(message)) / 2,
-                BOARD_WIDTH / 2);
+        g.setFont(large);
+        g.drawString(gameOverMessage, (BOARD_WIDTH - fontMetrics.stringWidth(gameOverMessage)) / 2,
+                BOARD_HEIGHT / 2);
+
+        // Draw instructions
+        g.setFont(new Font("Helvetica", Font.PLAIN, 12));
+        g.drawString("Press SPACE to restart", BOARD_WIDTH / 2 - 60, BOARD_HEIGHT / 2 + 30);
+        g.drawString("Press ESC to quit", BOARD_WIDTH / 2 - 50, BOARD_HEIGHT / 2 + 50);
+    }
+
+    private void drawPauseOverlay(Graphics g) {
+        System.out.println("Drawing pause overlay");
+        
+        // Semi-transparent overlay
+        g.setColor(new Color(0, 0, 0, 128));
+        g.fillRect(0, 0, BOARD_WIDTH, BOARD_HEIGHT);
+
+        // Pause box
+        g.setColor(new Color(0, 32, 48));
+        g.fillRect(50, BOARD_HEIGHT / 2 - 60, BOARD_WIDTH - 100, 120);
+        g.setColor(Color.white);
+        g.drawRect(50, BOARD_HEIGHT / 2 - 60, BOARD_WIDTH - 100, 120);
+        g.drawImage(new ImageIcon(IMG_PAUSE).getImage(), 50, BOARD_HEIGHT / 2 - 200, this);
+        
+
+        // Pause text
+        var large = new Font("Helvetica", Font.BOLD, 36);
+        var fontMetrics = this.getFontMetrics(large);
+        g.setColor(Color.white);
+        g.setFont(large);
+        String pauseText = "PAUSED";
+        g.drawString(pauseText, (BOARD_WIDTH - fontMetrics.stringWidth(pauseText)) / 2,
+                BOARD_HEIGHT / 2 - 20);
+
+        // Instructions
+        g.setFont(new Font("Helvetica", Font.PLAIN, 14));
+        g.drawString("Press P to resume", BOARD_WIDTH / 2 - 60, BOARD_HEIGHT / 2 + 20);
+        g.drawString("Press ESC to quit", BOARD_WIDTH / 2 - 55, BOARD_HEIGHT / 2 + 40);
     }
 
     private void update() {
 
+        // Check game over conditions first
+        checkGameOver();
+
+        if (!inGame || isPaused) {
+            return; // Don't update if game is over or paused
+        }
 
         // Check enemy spawn
         // TODO this approach can only spawn one enemy at a frame
@@ -401,11 +402,7 @@ public class Scene1 extends JPanel {
             }
         }
 
-        if (deaths == NUMBER_OF_ALIENS_TO_DESTROY) {
-            inGame = false;
-            timer.stop();
-            message = "Game won!";
-        }
+        checkGameOver();
 
         // player
         player.act();
@@ -471,38 +468,33 @@ public class Scene1 extends JPanel {
         shots.removeAll(shotsToRemove);
 
         // enemies
-        // for (Enemy enemy : enemies) {
-        //     int x = enemy.getX();
-        //     if (x >= BOARD_WIDTH - BORDER_RIGHT && direction != -1) {
-        //         direction = -1;
-        //         for (Enemy e2 : enemies) {
-        //             e2.setY(e2.getY() + GO_DOWN);
-        //         }
-        //     }
-        //     if (x <= BORDER_LEFT && direction != 1) {
-        //         direction = 1;
-        //         for (Enemy e : enemies) {
-        //             e.setY(e.getY() + GO_DOWN);
-        //         }
-        //     }
-        // }
-        // for (Enemy enemy : enemies) {
-        //     if (enemy.isVisible()) {
-        //         int y = enemy.getY();
-        //         if (y > GROUND - ALIEN_HEIGHT) {
-        //             inGame = false;
-        //             message = "Invasion!";
-        //         }
-        //         enemy.act(direction);
-        //     }
-        // }
+        for (Enemy enemy : enemies) {
+            int x = enemy.getX();
+            if (x >= BOARD_WIDTH - BORDER_RIGHT && direction != -1) {
+                direction = -1;
+                for (Enemy e2 : enemies) {
+                    e2.setY(e2.getY() + GO_DOWN);
+                }
+            }
+            if (x <= BORDER_LEFT && direction != 1) {
+                direction = 1;
+                for (Enemy e : enemies) {
+                    e.setY(e.getY() + GO_DOWN);
+                }
+            }
+        }
+        for (Enemy enemy : enemies) {
+            if (enemy.isVisible()) {
+                // Enemy invasion check moved to checkGameOver()
+                enemy.act(direction);
+            }
+        }
         // bombs - collision detection
         // Bomb is with enemy, so it loops over enemies
-        /*
         for (Enemy enemy : enemies) {
 
             int chance = randomizer.nextInt(15);
-            Enemy.Bomb bomb = enemy.getBomb();
+            Bomb bomb = enemy.getBomb();
 
             if (chance == CHANCE && enemy.isVisible() && bomb.isDestroyed()) {
 
@@ -535,11 +527,13 @@ public class Scene1 extends JPanel {
                 }
             }
         }
-         */
     }
 
     private void doGameCycle() {
-        frame++;
+        // Only increment frame when not paused
+        if (!isPaused) {
+            frame++;
+        }
         update();
         repaint();
     }
@@ -556,6 +550,10 @@ public class Scene1 extends JPanel {
 
         @Override
         public void keyReleased(KeyEvent e) {
+            // Don't process key releases when paused
+            if (isPaused) {
+                return;
+            }
             player.keyReleased(e);
         }
 
@@ -563,12 +561,33 @@ public class Scene1 extends JPanel {
         public void keyPressed(KeyEvent e) {
             System.out.println("Scene2.keyPressed: " + e.getKeyCode());
 
+            int key = e.getKeyCode();
+
+            if (!inGame) {
+                // Handle game over input
+                if (key == KeyEvent.VK_SPACE) {
+                    restartGame();
+                } else if (key == KeyEvent.VK_ESCAPE) {
+                    System.exit(0);
+                }
+                return;
+            }
+
+            // Toggle pause when P is pressed
+            if (key == KeyEvent.VK_P) {
+                togglePause();
+                return;
+            }
+
+            // Don't process other keys when paused
+            if (isPaused) {
+                return;
+            }
+
             player.keyPressed(e);
 
             int x = player.getX();
             int y = player.getY();
-
-            int key = e.getKeyCode();
 
             if (key == KeyEvent.VK_SPACE && inGame) {
                 System.out.println("Shots: " + shots.size());
@@ -578,7 +597,136 @@ public class Scene1 extends JPanel {
                     shots.add(shot);
                 }
             }
-
         }
     }
+
+    private void checkGameOver() {
+        // Check if player is dead
+        if (player.isDying()) {
+            player.die();
+            triggerGameOver("Game Over");
+            return;
+        }
+
+        // Check victory condition
+        if (deaths == NUMBER_OF_ALIENS_TO_DESTROY) {
+            triggerGameOver("Game Won!");
+            return;
+        }
+
+        // Check enemy invasion (enemies reach the ground)
+        for (Enemy enemy : enemies) {
+            if (enemy.isVisible()) {
+                int y = enemy.getY();
+                if (y > GROUND - ALIEN_HEIGHT) {
+                    triggerGameOver("Invasion!");
+                    return;
+                }
+            }
+        }
+
+        // Check enemy-player collision (direct contact = game over)
+        for (Enemy enemy : enemies) {
+            if (enemy.isVisible() && player.isVisible()) {
+                int enemyX = enemy.getX();
+                int enemyY = enemy.getY();
+                int playerX = player.getX();
+                int playerY = player.getY();
+
+                // Check if enemy and player are colliding
+                if (enemyX < playerX + PLAYER_WIDTH &&
+                        enemyX + ALIEN_WIDTH > playerX &&
+                        enemyY < playerY + PLAYER_HEIGHT &&
+                        enemyY + ALIEN_HEIGHT > playerY) {
+
+                    // Enemy touched player directly - Game Over
+                    var ii = new ImageIcon(IMG_EXPLOSION);
+                    player.setImage(ii.getImage());
+                    player.setDying(true);
+                    triggerGameOver("Game Over");
+                    return;
+                }
+            }
+        }
+    }
+
+    private void triggerGameOver(String endMessage) {
+        inGame = false;
+        gameOverMessage = endMessage;
+
+        // Stop the timer
+        if (timer != null && timer.isRunning()) {
+            timer.stop();
+        }
+
+        // Stop audio
+        try {
+            if (audioPlayer != null) {
+                audioPlayer.stop();
+            }
+        } catch (Exception e) {
+            System.err.println("Error stopping audio: " + e.getMessage());
+        }
+
+        // Print message for debugging
+        System.out.println("Game Over: " + endMessage);
+    }
+
+    private void restartGame() {
+        // Reset game state
+        inGame = true;
+        isPaused = false; // Reset pause state
+        frame = 0;
+        deaths = 0;
+        direction = -1;
+
+        // Clear all game objects
+        if (enemies != null)
+            enemies.clear();
+        if (powerups != null)
+            powerups.clear();
+        if (explosions != null)
+            explosions.clear();
+        if (shots != null)
+            shots.clear();
+
+        // Reinitialize game
+        gameInit();
+        initAudio();
+
+        // Restart timer
+        if (timer != null) {
+            timer.start();
+        }
+    }
+
+    private void togglePause() {
+        isPaused = !isPaused;
+        System.out.println("Pause toggled: isPaused = " + isPaused);
+        
+        if (isPaused) {
+            // Don't stop the timer - let it continue for repainting
+            // Just pause audio
+            try {
+                if (audioPlayer != null) {
+                    audioPlayer.pause();
+                }
+            } catch (Exception e) {
+                System.err.println("Error pausing audio: " + e.getMessage());
+            }
+        } else {
+            // Resume audio
+            try {
+                if (audioPlayer != null) {
+                    audioPlayer.resumeAudio();
+                }
+            } catch (Exception e) {
+                System.err.println("Error resuming audio: " + e.getMessage());
+            }
+        }
+        
+        // Force a repaint to show the pause overlay immediately
+        repaint();
+    }
+
 }

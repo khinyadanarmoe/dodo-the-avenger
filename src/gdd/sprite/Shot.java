@@ -29,4 +29,10 @@ public class Shot extends Sprite {
         setX(x + H_SPACE);
         setY(y - V_SPACE);
     }
+
+    @Override
+    public void act() {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'act'");
+    }
 }

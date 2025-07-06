@@ -5,7 +5,7 @@ import javax.swing.ImageIcon;
 
 public class Enemy extends Sprite {
 
-    // private Bomb bomb;
+    private Bomb bomb;
 
     public Enemy(int x, int y) {
 
@@ -17,7 +17,7 @@ public class Enemy extends Sprite {
         this.x = x;
         this.y = y;
 
-        // bomb = new Bomb(x, y);
+        bomb = new Bomb(x, y);
 
         var ii = new ImageIcon(IMG_ENEMY);
 
@@ -28,15 +28,19 @@ public class Enemy extends Sprite {
         setImage(scaledImage);
     }
 
-    public void act(int direction) {
+    @Override
+    public void act() {
+        // Default implementation of the abstract method
+    }
 
+    public void act(int direction) {
         this.x += direction;
     }
-/* 
+ 
     public Bomb getBomb() {
+    return bomb;
+}
 
-        return bomb;
-    }
 
     public class Bomb extends Sprite {
 
@@ -68,6 +72,12 @@ public class Enemy extends Sprite {
 
             return destroyed;
         }
+
+        @Override
+        public void act() {
+            // TODO Auto-generated method stub
+            throw new UnsupportedOperationException("Unimplemented method 'act'");
+        }
     }
-*/
+
 }
