@@ -11,9 +11,24 @@ import javax.swing.ImageIcon;
 public class Player extends Sprite {
 
     private static final int START_X = 100;
-    private static final int START_Y = GROUND;
+    private static final int START_Y = GROUND - PLAYER_HEIGHT; // Position player so bottom is at ground level
     private int frame = 0;
     private boolean isFiring = false;
+    
+    // HP System
+    private int maxHP = 10;
+    private int currentHP = 10;
+    private boolean invulnerable = false;
+    private int invulnerabilityTimer = 0;
+    private static final int INVULNERABILITY_DURATION = 60; // 1 second at 60 FPS
+
+    // Jumping physics
+    private int dy = 0; // Vertical velocity
+    // private int dx = 0; // Horizontal velocity during jumping
+    private boolean isOnGround = true;
+    private static final int JUMP_STRENGTH = -20; // Negative for upward movement
+    private static final int GRAVITY = 1; // Gravity pulls player down
+    // private static final int HORIZONTAL_SPEED = 2; // Horizontal movement speed during jump
 
     public static final int DIR_LEFT = 0;
     public static final int DIR_RIGHT = 1;
@@ -100,6 +115,15 @@ public class Player extends Sprite {
         System.out.printf("Player action=%s frame=%d facing=%d\n", action, frame, facing);
 
         frame++;
+        
+        // Handle invulnerability timer
+        if (invulnerable && invulnerabilityTimer > 0) {
+            invulnerabilityTimer--;
+            if (invulnerabilityTimer <= 0) {
+                invulnerable = false;
+                System.out.println("Player is no longer invulnerable");
+            }
+        }
 
         switch (action) {
             case ACT_RUNNING:
@@ -112,57 +136,80 @@ public class Player extends Sprite {
                 } else if (frame <= 40) {
                     clipNo = 4;
                 } else {
-                    clipNo = 3;
                     frame = 0;
+                    clipNo = 2;
+                }
+                break;
+
+            case ACT_JUMPING:
+            case ACT_JUMPING_SHOOTING:
+                // Apply gravity and vertical movement
+                dy += GRAVITY;
+                y += dy;
+                
+                // Apply horizontal movement during jumping
+                x += dx;
+                
+                // Keep player within screen bounds
+                if (x < 0) {
+                    x = 0;
+                } else if (x > BOARD_WIDTH - getWidth()) {
+                    x = BOARD_WIDTH - getWidth();
+                }
+                
+                // Check if player lands back on ground
+                if (y >= START_Y) {
+                    y = START_Y;
+                    dy = 0;
+                    dx = 0; // Stop horizontal movement when landing
+                    isOnGround = true;
+                    // Return to running when landing
+                    if (action == ACT_JUMPING) {
+                        action = ACT_RUNNING;
+                        frame = 0;
+                        clipNo = 2;
+                    } else { // ACT_JUMPING_SHOOTING
+                        action = ACT_RUNNING_SHOOTING;
+                        frame = 0;
+                        clipNo = 8;
+                    }
+                } else {
+                    // Still in air - use jumping animation
+                    if (action == ACT_JUMPING) {
+                        clipNo = (dy < 0) ? 5 : 6; // Rising or falling
+                    } else { // ACT_JUMPING_SHOOTING
+                        clipNo = 6; // Jump shooting animation
+                    }
+                }
+                break;
+
+            case ACT_SHOOTING:
+                if (frame <= 10) {
+                    clipNo = 7;
+                } else {
+                    frame = 0;
+                    clipNo = 7;
                 }
                 break;
 
             case ACT_RUNNING_SHOOTING:
                 if (frame <= 10) {
-                    clipNo = 9;
-                } else if (frame <= 20) {
                     clipNo = 8;
-                } else if (frame <= 30) {
+                } else if (frame <= 20) {
                     clipNo = 9;
-                } else if (frame <= 40) {
+                } else if (frame <= 30) {
                     clipNo = 10;
                 } else {
-                    clipNo = 9;
                     frame = 0;
+                    clipNo = 8;
                 }
-
-                break;
-            case ACT_JUMPING:
-            case ACT_JUMPING_SHOOTING:
-                clipNo = (action.equals(ACT_JUMPING_SHOOTING)) ? 6 : 5;
-                y += dy;
-
-                if (frame > 30) {
-                    dy = 10;
-                }
-
-                if (y + dy >= GROUND) {
-                    y = GROUND;
-                    // Always return to running when landing
-                    action = ACT_RUNNING;
-                    frame = 0;
-                    clipNo = 2;
-                    isFiring = false;
-                }
-
                 break;
 
-        }
-
-        // Player stays in same horizontal position - no dx movement needed
-
-        // Keep player within screen bounds (though they shouldn't move horizontally)
-        if (x <= 2) {
-            x = 2;
-        }
-
-        if (x >= BOARD_WIDTH - getWidth()) {
-            x = BOARD_WIDTH - getWidth();
+            default:
+                // Default to running
+                action = ACT_RUNNING;
+                clipNo = 2;
+                break;
         }
     }
 
@@ -171,33 +218,63 @@ public class Player extends Sprite {
 
         switch (action) {
             case ACT_RUNNING:
-                if (key == KeyEvent.VK_SPACE) {
-                    frame = 0;
+                if (key == KeyEvent.VK_UP && isOnGround) {
                     action = ACT_JUMPING;
-                    dy = -10;
-                }
-
-                if (key == KeyEvent.VK_ENTER) {
+                    frame = 0;
+                    clipNo = 5;
+                    dy = JUMP_STRENGTH; // Start jump with upward velocity
+                    // dx = HORIZONTAL_SPEED; // Automatically move forward when jumping
+                    isOnGround = false;
+                } else if (key == KeyEvent.VK_ENTER) {
+                    action = ACT_RUNNING_SHOOTING;
                     frame = 0;
                     isFiring = true;
-                    action = ACT_RUNNING_SHOOTING;
+                    clipNo = 8;
                 }
-
                 break;
 
             case ACT_JUMPING:
                 if (key == KeyEvent.VK_ENTER) {
-                    isFiring = true;
                     action = ACT_JUMPING_SHOOTING;
-                    clipNo = 6; // jump shoot
+                    frame = 0;
+                    isFiring = true;
+                    clipNo = 6;
+                } else if (key == KeyEvent.VK_LEFT) {
+                    // dx = -HORIZONTAL_SPEED; // Move left while jumping
+                } else if (key == KeyEvent.VK_RIGHT) {
+                    // dx = HORIZONTAL_SPEED; // Move right while jumping
                 }
                 break;
-                
+
             case ACT_SHOOTING:
-                if (key == KeyEvent.VK_SPACE) {
+                // Player is already shooting, handle other keys
+                if (key == KeyEvent.VK_UP && isOnGround) {
+                    action = ACT_JUMPING_SHOOTING;
                     frame = 0;
-                    action = ACT_JUMPING;
-                    dy = -10;
+                    clipNo = 6;
+                    dy = JUMP_STRENGTH; // Start jump with upward velocity
+                    // dx = HORIZONTAL_SPEED; // Automatically move forward when jumping
+                    isOnGround = false;
+                }
+                break;
+
+            case ACT_JUMPING_SHOOTING:
+                // Player is jumping and shooting - can still move horizontally
+                if (key == KeyEvent.VK_LEFT) {
+                    // dx = -HORIZONTAL_SPEED; // Move left while jumping
+                } else if (key == KeyEvent.VK_RIGHT) {
+                    // dx = HORIZONTAL_SPEED; // Move right while jumping
+                }
+                break;
+
+            case ACT_RUNNING_SHOOTING:
+                if (key == KeyEvent.VK_UP && isOnGround) {
+                    action = ACT_JUMPING_SHOOTING;
+                    frame = 0;
+                    clipNo = 6;
+                    dy = JUMP_STRENGTH; // Start jump with upward velocity
+                    // dx = HORIZONTAL_SPEED; // Automatically move forward when jumping
+                    isOnGround = false;
                 }
                 break;
         }
@@ -208,29 +285,13 @@ public class Player extends Sprite {
 
         switch (action) {
             case ACT_JUMPING:
-                // No horizontal movement changes needed
-                break;
-                
-            case ACT_RUNNING:
-                if (key == KeyEvent.VK_ENTER) {
-                    isFiring = false;
-                    // Stay running - no movement changes needed
-                }
+                // Don't change action until player lands (handled in act() method)
                 break;
 
             case ACT_SHOOTING:
                 if (key == KeyEvent.VK_ENTER) {
+                    action = ACT_RUNNING;
                     isFiring = false;
-                    action = ACT_RUNNING; // Return to running
-                    frame = 0;
-                    clipNo = 2;
-                }
-                break;
-
-            case ACT_RUNNING_SHOOTING:
-                if (key == KeyEvent.VK_ENTER) {
-                    isFiring = false;
-                    // Stay running
                     frame = 0;
                     clipNo = 2;
                 }
@@ -238,11 +299,72 @@ public class Player extends Sprite {
 
             case ACT_JUMPING_SHOOTING:
                 if (key == KeyEvent.VK_ENTER) {
-                    isFiring = false;
                     action = ACT_JUMPING;
-                    clipNo = 5; // Return to normal jump animation
+                    isFiring = false;
+                    frame = 0;
+                    clipNo = 5;
+                }
+                // Don't handle UP key here - let player land naturally
+                break;
+
+            case ACT_RUNNING_SHOOTING:
+                if (key == KeyEvent.VK_ENTER) {
+                    isFiring = false;
+                    action = ACT_RUNNING;
+                    frame = 0;
+                    clipNo = 2;
                 }
                 break;
         }
+    }
+
+    // HP System Methods
+    public int getCurrentHP() {
+        return currentHP;
+    }
+    
+    public int getMaxHP() {
+        return maxHP;
+    }
+    
+    public void takeDamage(int damage) {
+        if (!invulnerable && currentHP > 0) {
+            currentHP -= damage;
+            invulnerable = true;
+            invulnerabilityTimer = INVULNERABILITY_DURATION;
+            
+            System.out.println("Player took " + damage + " damage. HP: " + currentHP + "/" + maxHP);
+            
+            if (currentHP <= 0) {
+                currentHP = 0;
+                setDying(true);
+                System.out.println("Player died!");
+            }
+        }
+    }
+    
+    public void heal(int amount) {
+        currentHP = Math.min(currentHP + amount, maxHP);
+        System.out.println("Player healed " + amount + " HP. HP: " + currentHP + "/" + maxHP);
+    }
+    
+    public boolean isInvulnerable() {
+        return invulnerable;
+    }
+    
+    public void resetHP() {
+        currentHP = maxHP;
+        invulnerable = false;
+        invulnerabilityTimer = 0;
+        
+        // Reset jumping state
+        dy = 0;
+        dx = 0;
+        isOnGround = true;
+        y = START_Y;
+        x = START_X; // Reset to starting position
+        action = ACT_RUNNING;
+        frame = 0;
+        clipNo = 2;
     }
 }

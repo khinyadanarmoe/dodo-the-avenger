@@ -36,6 +36,10 @@ public class Global {
     public static final String IMG_TITLE = "src/images/title.png";
     public static final String IMG_POWERUP_SPEEDUP = "src/images/powerup-s.png";
     
+    // Obstacles
+    public static final String IMG_TUMBLEWEED = "src/images/tumbleweed.png"; // TODO: Replace with actual tumbleweed image
+    public static final String IMG_CACTUS = "src/images/cactus.png"; // TODO: Replace with actual cactus image
+    
     //background
     public static final String IMG_BACKGROUND = "src/images/background.png";
     //game start

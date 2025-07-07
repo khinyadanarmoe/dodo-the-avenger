@@ -7,15 +7,19 @@ import gdd.SpawnDetails;
 import gdd.powerup.PowerUp;
 import gdd.powerup.SpeedUp;
 import gdd.sprite.Alien1;
+import gdd.sprite.Cactus;
 import gdd.sprite.Enemy;
 import gdd.sprite.Enemy.Bomb;
 import gdd.sprite.Explosion;
 import gdd.sprite.Player;
-import gdd.sprite.Shot;
+import gdd.sprite.Tumbleweed;
+
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.FontMetrics;
 import java.awt.Graphics;
+import java.awt.Rectangle;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -28,6 +32,7 @@ import java.util.Random;
 import javax.swing.ImageIcon;
 import javax.swing.JPanel;
 import javax.swing.Timer;
+import gdd.sprite.Obstacle;
 
 public class Scene1 extends JPanel {
 
@@ -35,14 +40,16 @@ public class Scene1 extends JPanel {
     private boolean isPaused = false;
     private boolean isGameOver = false;
     private boolean isGameWon = false;
+    
 
     private int frame = 0;
     private List<PowerUp> powerups;
     private List<Enemy> enemies;
     private List<Explosion> explosions;
-    private List<Shot> shots;
     private Player player;
-    // private Shot shot;
+
+    //obstacles
+    private List<Obstacle> obstacles;
 
     final int BLOCKHEIGHT = 50;
     final int BLOCKWIDTH = 50;
@@ -64,37 +71,11 @@ public class Scene1 extends JPanel {
     private int currentRow = -1;
     // TODO load this map from a file
     private int mapOffset = 0;
-    private final int[][] MAP = {
-            { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
-            { 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
-            { 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
-            { 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0 },
-            { 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0 },
-            { 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0 },
-            { 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0 },
-            { 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0 },
-            { 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0 },
-            { 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0 },
-            { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0 },
-            { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },
-            { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
-            { 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
-            { 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
-            { 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0 },
-            { 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0 },
-            { 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0 },
-            { 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0 },
-            { 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0 },
-            { 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0 },
-            { 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0 },
-            { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0 },
-            { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 }
-    };
+    
 
     private HashMap<Integer, SpawnDetails> spawnMap = new HashMap<>();
     private AudioPlayer audioPlayer;
-    private int lastRowToShow;
-    private int firstRowToShow;
+
 
     public Scene1(Game game) {
         this.game = game;
@@ -115,19 +96,32 @@ public class Scene1 extends JPanel {
 
     private void loadSpawnDetails() {
         // TODO load this from a file
-        spawnMap.put(50, new SpawnDetails("PowerUp-SpeedUp", 100, 0));
-        spawnMap.put(200, new SpawnDetails("Alien1", 200, 0));
-        spawnMap.put(300, new SpawnDetails("Alien1", 300, 0));
+        // For side-scrolling: spawn from right side (BOARD_WIDTH) and move left
 
-        spawnMap.put(400, new SpawnDetails("Alien1", 400, 0));
-        spawnMap.put(401, new SpawnDetails("Alien1", 450, 0));
-        spawnMap.put(402, new SpawnDetails("Alien1", 500, 0));
-        spawnMap.put(403, new SpawnDetails("Alien1", 550, 0));
+        //obstacles
+        spawnMap.put(50, new SpawnDetails("Tumbleweed", BOARD_WIDTH, GROUND )); // Adjust for tumbleweed height
+        spawnMap.put(100, new SpawnDetails("Cactus", BOARD_WIDTH, GROUND )); // Adjust for cactus height
 
-        spawnMap.put(500, new SpawnDetails("Alien1", 100, 0));
-        spawnMap.put(501, new SpawnDetails("Alien1", 150, 0));
-        spawnMap.put(502, new SpawnDetails("Alien1", 200, 0));
-        spawnMap.put(503, new SpawnDetails("Alien1", 350, 0));
+        spawnMap.put(110, new SpawnDetails("PowerUp-SpeedUp", BOARD_WIDTH, 300));
+        spawnMap.put(120, new SpawnDetails("Alien1", BOARD_WIDTH, 100));
+        spawnMap.put(130, new SpawnDetails("Alien1", BOARD_WIDTH, 150));
+
+        spawnMap.put(400, new SpawnDetails("Alien1", BOARD_WIDTH, 50));
+        spawnMap.put(401, new SpawnDetails("Alien1", BOARD_WIDTH, 100));
+        spawnMap.put(402, new SpawnDetails("Alien1", BOARD_WIDTH, 150));
+        spawnMap.put(403, new SpawnDetails("Alien1", BOARD_WIDTH, 200));
+
+        spawnMap.put(500, new SpawnDetails("Alien1", BOARD_WIDTH, 80));
+        spawnMap.put(501, new SpawnDetails("Alien1", BOARD_WIDTH, 120));
+        spawnMap.put(502, new SpawnDetails("Alien1", BOARD_WIDTH, 160));
+        spawnMap.put(503, new SpawnDetails("Alien1", BOARD_WIDTH, 200));
+
+        // Debug: Print spawn map contents
+        System.out.println("Spawn map loaded with " + spawnMap.size() + " entries:");
+        for (Integer frame : spawnMap.keySet()) {
+            SpawnDetails sd = spawnMap.get(frame);
+            System.out.println("  Frame " + frame + ": " + sd.type + " at (" + sd.x + ", " + sd.y + ")");
+        }
     }
 
     private void initBoard() {
@@ -163,7 +157,7 @@ public class Scene1 extends JPanel {
         enemies = new ArrayList<>();
         powerups = new ArrayList<>();
         explosions = new ArrayList<>();
-        shots = new ArrayList<>();
+        obstacles = new ArrayList<>();
 
         // for (int i = 0; i < 4; i++) {
         // for (int j = 0; j < 6; j++) {
@@ -210,7 +204,7 @@ public class Scene1 extends JPanel {
         }
     }
 
-    private void drawPowreUps(Graphics g) {
+    private void drawPowerUps(Graphics g) {
 
         for (PowerUp p : powerups) {
 
@@ -229,8 +223,11 @@ public class Scene1 extends JPanel {
     private void drawPlayer(Graphics g) {
 
         if (player.isVisible()) {
-
             g.drawImage(player.getImage(), player.getX(), player.getY(), this);
+            
+            // Debug: Draw player bounds
+            g.setColor(Color.BLUE);
+            g.drawRect(player.getX(), player.getY(), player.getWidth(), player.getHeight());
         }
 
         if (player.isDying()) {
@@ -238,24 +235,18 @@ public class Scene1 extends JPanel {
         }
     }
 
-    private void drawShot(Graphics g) {
-
-        for (Shot shot : shots) {
-
-            if (shot.isVisible()) {
-                g.drawImage(shot.getImage(), shot.getX(), shot.getY(), this);
-            }
-        }
-    }
-
     private void drawBombing(Graphics g) {
 
-        // for (Enemy e : enemies) {
-        // Enemy.Bomb b = e.getBomb();
-        // if (!b.isDestroyed()) {
-        // g.drawImage(b.getImage(), b.getX(), b.getY(), this);
-        // }
-        // }
+        for (Enemy e : enemies) {
+            Enemy.Bomb b = e.getBomb();
+            if (!b.isDestroyed()) {
+                g.drawImage(b.getImage(), b.getX(), b.getY(), this);
+                
+                // Debug: Draw bomb bounds
+                g.setColor(Color.ORANGE);
+                g.drawRect(b.getX(), b.getY(), b.getWidth(), b.getHeight());
+            }
+        }
     }
 
     private void drawExplosions(Graphics g) {
@@ -276,6 +267,25 @@ public class Scene1 extends JPanel {
         explosions.removeAll(toRemove);
     }
 
+    private void drawObstacles(Graphics g) {
+        if (obstacles.size() > 0) {
+            System.out.println("Drawing " + obstacles.size() + " obstacles");
+        }
+        for (Obstacle obstacle : obstacles) {
+            if (obstacle.isVisible()) {
+                g.drawImage(obstacle.getImage(), obstacle.getX(), obstacle.getY(), this);
+                
+                // Debug: Draw obstacle bounds
+                g.setColor(Color.RED);
+                g.drawRect(obstacle.getX(), obstacle.getY(), obstacle.getWidth(), obstacle.getHeight());
+            }
+
+            if (obstacle.isDying()) {
+                obstacle.die();
+            }
+        }
+    }
+
     @Override
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
@@ -285,21 +295,17 @@ public class Scene1 extends JPanel {
 
     private void doDrawing(Graphics g) {
 
-        g.setColor(Color.black);
-        g.fillRect(0, 0, d.width, d.height);
-
-        g.setColor(Color.white);
-        g.drawString("FRAME: " + frame, 10, 10);
-
-        g.setColor(Color.green);
+        
 
         if (inGame) {
             drawBackground(g);
             drawExplosions(g);
-            drawPowreUps(g);
+            drawObstacles(g);
+            drawPowerUps(g);
             drawAliens(g);
+            drawBombing(g); // Draw enemy bombs
             drawPlayer(g);
-            drawShot(g);
+            drawHPBar(g); // Draw HP bar
             
             if (isPaused) {
                 System.out.println("isPaused is true, calling drawPauseOverlay");
@@ -308,6 +314,13 @@ public class Scene1 extends JPanel {
         } else {
             drawGameOver(g);
         }
+
+        // g.setColor(Color.black);
+        // g.fillRect(0, 0, d.width, d.height);
+
+        g.setColor(Color.white);
+        g.drawString("FRAME: " + frame, 10, 10);
+        g.setColor(Color.green);
 
         Toolkit.getDefaultToolkit().sync();
     }
@@ -367,6 +380,65 @@ public class Scene1 extends JPanel {
         g.drawString("Press ESC to quit", BOARD_WIDTH / 2 - 55, BOARD_HEIGHT / 2 + 40);
     }
 
+    private void drawHPBar(Graphics g) {
+        // HP Bar dimensions and position (top right)
+        int barWidth = 200;
+        int barHeight = 20;
+        int barX = BOARD_WIDTH - barWidth - 20; // 20 pixels from right edge
+        int barY = 20; // 20 pixels from top
+        
+        // Get player HP
+        int currentHP = player.getCurrentHP();
+        int maxHP = player.getMaxHP();
+        
+        // Calculate HP percentage
+        double hpPercentage = (double) currentHP / maxHP;
+        int fillWidth = (int) (barWidth * hpPercentage);
+        
+        // Draw HP bar background (dark gray)
+        g.setColor(new Color(50, 50, 50));
+        g.fillRect(barX, barY, barWidth, barHeight);
+        
+        // Draw HP bar border
+        g.setColor(Color.WHITE);
+        g.drawRect(barX, barY, barWidth, barHeight);
+        
+        // Draw HP fill based on percentage
+        if (hpPercentage > 0.6) {
+            g.setColor(Color.GREEN); // High HP - Green
+        } else if (hpPercentage > 0.3) {
+            g.setColor(Color.YELLOW); // Medium HP - Yellow
+        } else {
+            g.setColor(Color.RED); // Low HP - Red
+        }
+        
+        if (fillWidth > 0) {
+            g.fillRect(barX + 1, barY + 1, fillWidth - 2, barHeight - 2);
+        }
+        
+        // Draw HP text
+        g.setColor(Color.WHITE);
+        g.setFont(new Font("Arial", Font.BOLD, 12));
+        String hpText = "HP: " + currentHP + "/" + maxHP;
+        FontMetrics fm = g.getFontMetrics();
+        int textWidth = fm.stringWidth(hpText);
+        g.drawString(hpText, barX + (barWidth - textWidth) / 2, barY + barHeight + 15);
+        
+        // Draw invulnerability indicator
+        if (player.isInvulnerable()) {
+            g.setColor(Color.CYAN);
+            g.setFont(new Font("Arial", Font.BOLD, 10));
+            g.drawString("INVULNERABLE", barX, barY - 5);
+        }
+        
+        // Debug: Draw player position info
+        g.setColor(Color.YELLOW);
+        g.setFont(new Font("Arial", Font.PLAIN, 10));
+        String posText = "Player: (" + player.getX() + "," + player.getY() + ") " + 
+                        player.getWidth() + "x" + player.getHeight();
+        g.drawString(posText, 10, 30);
+    }
+
     private void update() {
 
         // Check game over conditions first
@@ -380,6 +452,7 @@ public class Scene1 extends JPanel {
         // TODO this approach can only spawn one enemy at a frame
         SpawnDetails sd = spawnMap.get(frame);
         if (sd != null) {
+            System.out.println("Spawning at frame " + frame + ": " + sd.type + " at (" + sd.x + ", " + sd.y + ")");
             // Create a new enemy based on the spawn details
             switch (sd.type) {
                 case "Alien1":
@@ -395,6 +468,18 @@ public class Scene1 extends JPanel {
                     // Handle speed up item spawn
                     PowerUp speedUp = new SpeedUp(sd.x, sd.y);
                     powerups.add(speedUp);
+                    break;
+                
+                //obstacles
+                case "Tumbleweed":
+                    System.out.println("Creating Tumbleweed at (" + sd.x + ", " + sd.y + ")");
+                    Obstacle tumbleweed = new Tumbleweed(sd.x, sd.y);
+                    obstacles.add(tumbleweed);
+                    System.out.println("Tumbleweed added. Total obstacles: " + obstacles.size());
+                    break;
+                case "Cactus":
+                    Obstacle cactus = new Cactus(sd.x, sd.y);
+                    obstacles.add(cactus);
                     break;
                 default:
                     System.out.println("Unknown enemy type: " + sd.type);
@@ -424,48 +509,46 @@ public class Scene1 extends JPanel {
             }
         }
 
-        // shot
-        List<Shot> shotsToRemove = new ArrayList<>();
-        for (Shot shot : shots) {
-
-            if (shot.isVisible()) {
-                int shotX = shot.getX();
-                int shotY = shot.getY();
-
-                for (Enemy enemy : enemies) {
-                    // Collision detection: shot and enemy
-                    int enemyX = enemy.getX();
-                    int enemyY = enemy.getY();
-
-                    if (enemy.isVisible() && shot.isVisible()
-                            && shotX >= (enemyX)
-                            && shotX <= (enemyX + ALIEN_WIDTH)
-                            && shotY >= (enemyY)
-                            && shotY <= (enemyY + ALIEN_HEIGHT)) {
-
-                        var ii = new ImageIcon(IMG_EXPLOSION);
-                        enemy.setImage(ii.getImage());
-                        enemy.setDying(true);
-                        explosions.add(new Explosion(enemyX, enemyY));
-                        deaths++;
-                        shot.die();
-                        shotsToRemove.add(shot);
+        // Obstacles
+        for (Obstacle obstacle : obstacles) {
+            if (obstacle.isVisible()) {
+                obstacle.act();
+                
+                // Check collision with player using Rectangle collision detection
+                if (player.isVisible() && !player.isInvulnerable()) {
+                    // Create rectangles for player and obstacle
+                    Rectangle playerRect = new Rectangle(
+                        player.getX(), 
+                        player.getY(), 
+                        player.getWidth(), 
+                        player.getHeight()
+                    );
+                    
+                    Rectangle obstacleRect = new Rectangle(
+                        obstacle.getX(), 
+                        obstacle.getY(), 
+                        obstacle.getWidth(), 
+                        obstacle.getHeight()
+                    );
+                    
+                    // Check if rectangles intersect
+                    if (playerRect.intersects(obstacleRect)) {
+                        // Player collided with obstacle
+                        int damage = 1; // Default damage
+                        if (obstacle instanceof Tumbleweed) {
+                            damage = 1; // Tumbleweed does 1 damage
+                        } else if (obstacle instanceof Cactus) {
+                            damage = 2; // Cactus does 2 damage
+                        }
+                        
+                        player.takeDamage(damage);
+                        System.out.println("Player hit " + obstacle.getClass().getSimpleName() + " for " + damage + " damage!");
+                        System.out.println("Player Rect: " + playerRect);
+                        System.out.println("Obstacle Rect: " + obstacleRect);
                     }
-                }
-
-                int y = shot.getY();
-                // y -= 4;
-                y -= 20;
-
-                if (y < 0) {
-                    shot.die();
-                    shotsToRemove.add(shot);
-                } else {
-                    shot.setY(y);
                 }
             }
         }
-        shots.removeAll(shotsToRemove);
 
         // enemies
         for (Enemy enemy : enemies) {
@@ -503,25 +586,38 @@ public class Scene1 extends JPanel {
                 bomb.setY(enemy.getY());
             }
 
-            int bombX = bomb.getX();
-            int bombY = bomb.getY();
-            int playerX = player.getX();
-            int playerY = player.getY();
-
-            if (player.isVisible() && !bomb.isDestroyed()
-                    && bombX >= (playerX)
-                    && bombX <= (playerX + PLAYER_WIDTH)
-                    && bombY >= (playerY)
-                    && bombY <= (playerY + PLAYER_HEIGHT)) {
-
-                var ii = new ImageIcon(IMG_EXPLOSION);
-                player.setImage(ii.getImage());
-                player.setDying(true);
-                bomb.setDestroyed(true);
+            // Use Rectangle collision detection for bombs
+            if (player.isVisible() && !bomb.isDestroyed()) {
+                // Create rectangles for player and bomb
+                Rectangle playerRect = new Rectangle(
+                    player.getX(), 
+                    player.getY(), 
+                    player.getWidth(), 
+                    player.getHeight()
+                );
+                
+                Rectangle bombRect = new Rectangle(
+                    bomb.getX(), 
+                    bomb.getY(), 
+                    bomb.getWidth(), 
+                    bomb.getHeight()
+                );
+                
+                // Check if rectangles intersect
+                if (playerRect.intersects(bombRect)) {
+                    // Instead of instant game over, damage the player
+                    if (!player.isInvulnerable()) {
+                        player.takeDamage(2); // Bombs do 2 HP damage
+                        System.out.println("Player hit by enemy bomb for 2 damage!");
+                        System.out.println("Player Rect: " + playerRect);
+                        System.out.println("Bomb Rect: " + bombRect);
+                    }
+                    bomb.setDestroyed(true);
+                }
             }
 
             if (!bomb.isDestroyed()) {
-                bomb.setY(bomb.getY() + 1);
+                bomb.setX(bomb.getX() - 4);
                 if (bomb.getY() >= GROUND - BOMB_HEIGHT) {
                     bomb.setDestroyed(true);
                 }
@@ -585,18 +681,6 @@ public class Scene1 extends JPanel {
             }
 
             player.keyPressed(e);
-
-            int x = player.getX();
-            int y = player.getY();
-
-            if (key == KeyEvent.VK_SPACE && inGame) {
-                System.out.println("Shots: " + shots.size());
-                if (shots.size() < 4) {
-                    // Create a new shot and add it to the list
-                    Shot shot = new Shot(x, y);
-                    shots.add(shot);
-                }
-            }
         }
     }
 
@@ -687,11 +771,15 @@ public class Scene1 extends JPanel {
             powerups.clear();
         if (explosions != null)
             explosions.clear();
-        if (shots != null)
-            shots.clear();
+        if (obstacles != null)
+            obstacles.clear();
 
         // Reinitialize game
         gameInit();
+        
+        // Reset player HP
+        player.resetHP();
+        
         initAudio();
 
         // Restart timer

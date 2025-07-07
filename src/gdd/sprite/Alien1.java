@@ -7,6 +7,6 @@ public class Alien1 extends Enemy {
     }
 
     public void act(int direction) {
-        this.y++;
+        this.x--;
     }
 }

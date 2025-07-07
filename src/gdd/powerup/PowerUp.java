@@ -15,5 +15,12 @@ abstract public class PowerUp extends Sprite {
         this.y = y;
     }
 
+    // Add default act method for side-scrolling
+    @Override
+    public void act() {
+        // Default behavior for side-scrolling - move left
+        this.x -= 2;
+    }
+
     abstract public void upgrade(Player player);
 }
