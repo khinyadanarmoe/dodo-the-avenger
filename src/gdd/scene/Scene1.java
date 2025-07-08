@@ -6,6 +6,7 @@ import static gdd.Global.*;
 import gdd.SpawnDetails;
 import gdd.powerup.PowerUp;
 import gdd.powerup.SpeedUp;
+import gdd.powerup.Shield;
 import gdd.sprite.Alien1;
 import gdd.sprite.Cactus;
 import gdd.sprite.Enemy;
@@ -15,7 +16,6 @@ import gdd.sprite.Player;
 import gdd.sprite.Tumbleweed;
 
 import java.awt.Color;
-import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
@@ -38,7 +38,6 @@ public class Scene1 extends JPanel {
 
     // state overlay
     private boolean isPaused = false;
-    private boolean isGameOver = false;
     private boolean isGameWon = false;
     
 
@@ -62,19 +61,30 @@ public class Scene1 extends JPanel {
     private boolean inGame = true;
     private String gameOverMessage = "Game Over";
 
-    private final Dimension d = new Dimension(BOARD_WIDTH, BOARD_HEIGHT);
     private final Random randomizer = new Random();
 
     private Timer timer;
     private final Game game;
 
-    private int currentRow = -1;
-    // TODO load this map from a file
-    private int mapOffset = 0;
+  
     
 
     private HashMap<Integer, SpawnDetails> spawnMap = new HashMap<>();
     private AudioPlayer audioPlayer;
+
+    // Dynamic spawning counters
+    private int tumbleweedSpawnCounter = 0;
+    private int cactusSpawnCounter = 0;
+    private int alienSpawnCounter = 0;
+    private int speedupCounter = 0;
+    private int shieldCounter = 0;
+    
+    // Spawn intervals (frames between spawns)
+    private static final int TUMBLEWEED_SPAWN_INTERVAL = 180; // 3 seconds at 60 FPS
+    private static final int CACTUS_SPAWN_INTERVAL = 240; // 4 seconds at 60 FPS
+    private static final int ALIEN_SPAWN_INTERVAL = 300; // 5 seconds at 60 FPS
+    private static final int SPEEDUP_SPAWN_INTERVAL = 360; // 6 seconds at 60 FPS
+    private static final int SHIELD_SPAWN_INTERVAL = 300; // 5 seconds at 60 FPS
 
 
     public Scene1(Game game) {
@@ -95,37 +105,19 @@ public class Scene1 extends JPanel {
     }
 
     private void loadSpawnDetails() {
-        // TODO load this from a file
-        // For side-scrolling: spawn from right side (BOARD_WIDTH) and move left
-
-        //obstacles
-        spawnMap.put(50, new SpawnDetails("Tumbleweed", BOARD_WIDTH, GROUND )); // Adjust for tumbleweed height
-        spawnMap.put(100, new SpawnDetails("Cactus", BOARD_WIDTH, GROUND )); // Adjust for cactus height
-
-        spawnMap.put(110, new SpawnDetails("PowerUp-SpeedUp", BOARD_WIDTH, 300));
-        spawnMap.put(120, new SpawnDetails("Alien1", BOARD_WIDTH, 100));
-        spawnMap.put(130, new SpawnDetails("Alien1", BOARD_WIDTH, 150));
-
-        spawnMap.put(400, new SpawnDetails("Alien1", BOARD_WIDTH, 50));
-        spawnMap.put(401, new SpawnDetails("Alien1", BOARD_WIDTH, 100));
-        spawnMap.put(402, new SpawnDetails("Alien1", BOARD_WIDTH, 150));
-        spawnMap.put(403, new SpawnDetails("Alien1", BOARD_WIDTH, 200));
-
-        spawnMap.put(500, new SpawnDetails("Alien1", BOARD_WIDTH, 80));
-        spawnMap.put(501, new SpawnDetails("Alien1", BOARD_WIDTH, 120));
-        spawnMap.put(502, new SpawnDetails("Alien1", BOARD_WIDTH, 160));
-        spawnMap.put(503, new SpawnDetails("Alien1", BOARD_WIDTH, 200));
-
-        // Debug: Print spawn map contents
-        System.out.println("Spawn map loaded with " + spawnMap.size() + " entries:");
+        // Initial spawns to get the game started
+        // spawnMap.put(50, new SpawnDetails("Tumbleweed", BOARD_WIDTH, GROUND));
+        // spawnMap.put(100, new SpawnDetails("Cactus", BOARD_WIDTH, GROUND));
+        // spawnMap.put(110, new SpawnDetails("PowerUp-SpeedUp", BOARD_WIDTH, 300));
+        // spawnMap.put(130, new SpawnDetails("PowerUp-Shield", BOARD_WIDTH, 580));
+        // spawnMap.put(120, new SpawnDetails("Alien1", BOARD_WIDTH, 100));
+        
+        // Debug: Print initial spawn map contents
+        System.out.println("Initial spawn map loaded with " + spawnMap.size() + " entries:");
         for (Integer frame : spawnMap.keySet()) {
             SpawnDetails sd = spawnMap.get(frame);
             System.out.println("  Frame " + frame + ": " + sd.type + " at (" + sd.x + ", " + sd.y + ")");
         }
-    }
-
-    private void initBoard() {
-
     }
 
     public void start() {
@@ -302,6 +294,7 @@ public class Scene1 extends JPanel {
             drawExplosions(g);
             drawObstacles(g);
             drawPowerUps(g);
+            
             drawAliens(g);
             drawBombing(g); // Draw enemy bombs
             drawPlayer(g);
@@ -311,7 +304,11 @@ public class Scene1 extends JPanel {
                 System.out.println("isPaused is true, calling drawPauseOverlay");
                 drawPauseOverlay(g);
             }
-        } else {
+        } else if (isGameWon){
+            drawStage1Complete(g);
+        }
+        
+        else {
             drawGameOver(g);
         }
 
@@ -323,6 +320,31 @@ public class Scene1 extends JPanel {
         g.setColor(Color.green);
 
         Toolkit.getDefaultToolkit().sync();
+    }
+
+    private void drawStage1Complete(Graphics g) {
+        g.setColor(Color.black);
+        g.fillRect(0, 0, BOARD_WIDTH, BOARD_HEIGHT);
+
+        g.setColor(new Color(0, 64, 128)); // Blue background
+        g.fillRect(50, BOARD_HEIGHT / 2 - 60, BOARD_WIDTH - 100, 120);
+        g.setColor(Color.white);
+        g.drawRect(50, BOARD_HEIGHT / 2 - 60, BOARD_WIDTH - 100, 120);
+
+        // Stage complete text
+        var large = new Font("Helvetica", Font.BOLD, 36);
+        var fontMetrics = this.getFontMetrics(large);
+        g.setColor(Color.YELLOW);
+        g.setFont(large);
+        String completeText = "STAGE 1 COMPLETE!";
+        g.drawString(completeText, (BOARD_WIDTH - fontMetrics.stringWidth(completeText)) / 2,
+                BOARD_HEIGHT / 2 - 10);
+
+        // Instructions
+        g.setFont(new Font("Helvetica", Font.PLAIN, 14));
+        g.setColor(Color.WHITE);
+        g.drawString("Preparing for cutscene...", BOARD_WIDTH / 2 - 80, BOARD_HEIGHT / 2 + 30);
+        g.drawString("Press SPACE to continue", BOARD_WIDTH / 2 - 75, BOARD_HEIGHT / 2 + 50);
     }
 
 
@@ -431,60 +453,133 @@ public class Scene1 extends JPanel {
             g.drawString("INVULNERABLE", barX, barY - 5);
         }
         
+        // Draw shield indicator
+        if (player.isShieldActive()) {
+            g.setColor(Color.BLUE);
+            g.setFont(new Font("Arial", Font.BOLD, 12));
+            String shieldText = "SHIELD: " + (player.getShieldTimer() / 60.0f) + "s";
+            g.drawString(shieldText, barX, barY - 20);
+            
+            // Draw shield border around HP bar
+            g.setColor(Color.BLUE);
+            g.drawRect(barX - 2, barY - 2, barWidth + 4, barHeight + 4);
+        }
+        
         // Debug: Draw player position info
         g.setColor(Color.YELLOW);
         g.setFont(new Font("Arial", Font.PLAIN, 10));
         String posText = "Player: (" + player.getX() + "," + player.getY() + ") " + 
                         player.getWidth() + "x" + player.getHeight();
         g.drawString(posText, 10, 30);
+        
+        // Draw stage timer countdown
+        g.setColor(Color.WHITE);
+        g.setFont(new Font("Arial", Font.BOLD, 14));
+        int remainingFrames = Math.max(0, 300 - frame);
+        float remainingSeconds = remainingFrames / 60.0f;
+        String timerText = String.format("Stage Complete in: %.1fs", remainingSeconds);
+        g.drawString(timerText, 10, 50);
+    }
+
+    private void handleDynamicSpawning() {
+        // Increment spawn counters
+        tumbleweedSpawnCounter++;
+        cactusSpawnCounter++;
+        alienSpawnCounter++;
+ 
+        // Spawn Tumbleweed based on interval
+        if (tumbleweedSpawnCounter >= TUMBLEWEED_SPAWN_INTERVAL) {
+            SpawnDetails tumbleweedSpawn = new SpawnDetails("Tumbleweed", BOARD_WIDTH, GROUND);
+            spawnEntity(tumbleweedSpawn);
+            tumbleweedSpawnCounter = 0; // Reset counter
+            System.out.println("Dynamic spawn: Tumbleweed at frame " + frame);
+        }
+        
+        // Spawn Cactus based on interval
+        if (cactusSpawnCounter >= CACTUS_SPAWN_INTERVAL) {
+            SpawnDetails cactusSpawn = new SpawnDetails("Cactus", BOARD_WIDTH, GROUND);
+            spawnEntity(cactusSpawn);
+            cactusSpawnCounter = 0; // Reset counter
+            System.out.println("Dynamic spawn: Cactus at frame " + frame);
+        }
+        
+        // Spawn Alien based on interval
+        if (alienSpawnCounter >= ALIEN_SPAWN_INTERVAL) {
+            // Randomize alien Y position between 20 and ground level
+            int minY = 20;
+            int maxY = GROUND - ALIEN_HEIGHT; // Ensure alien doesn't spawn below ground
+            int randomY = minY + randomizer.nextInt(maxY - minY + 1);
+            SpawnDetails alienSpawn = new SpawnDetails("Alien1", BOARD_WIDTH, randomY);
+            spawnEntity(alienSpawn);
+            alienSpawnCounter = 0; // Reset counter
+            System.out.println("Dynamic spawn: Alien1 at frame " + frame + " Y=" + randomY);
+        }
+
+        // Collectibles
+        speedupCounter++;
+        shieldCounter++;
+        // Spawn SpeedUp power-up every 5 seconds (300 frames)
+        if (speedupCounter >= SPEEDUP_SPAWN_INTERVAL) {
+            SpawnDetails speedupSpawn = new SpawnDetails("PowerUp-SpeedUp", BOARD_WIDTH, 400);
+            spawnEntity(speedupSpawn);
+            speedupCounter = 0; // Reset counter
+            System.out.println("Dynamic spawn: PowerUp-SpeedUp at frame " + frame);    
+        } 
+
+        if (shieldCounter >= SHIELD_SPAWN_INTERVAL) { // Spawn Shield every 6 seconds (360 frames)
+            SpawnDetails shieldSpawn = new SpawnDetails("PowerUp-Shield", BOARD_WIDTH, 580);
+            spawnEntity(shieldSpawn);
+            shieldCounter = 0; // Reset counter
+            System.out.println("Dynamic spawn: PowerUp-Shield at frame " + frame);
+        }       
+    }
+    
+    private void spawnEntity(SpawnDetails sd) {
+        switch (sd.type) {
+            case "Alien1":
+                Enemy enemy = new Alien1(sd.x, sd.y);
+                enemies.add(enemy);
+                break;
+            case "PowerUp-SpeedUp":
+                PowerUp speedUp = new SpeedUp(sd.x, sd.y);
+                powerups.add(speedUp);
+                break;
+            case "PowerUp-Shield":
+                PowerUp shield = new Shield(sd.x, sd.y);
+                powerups.add(shield);
+                break;
+            case "Tumbleweed":
+                Obstacle tumbleweed = new Tumbleweed(sd.x, sd.y);
+                obstacles.add(tumbleweed);
+                break;
+            case "Cactus":
+                Obstacle cactus = new Cactus(sd.x, sd.y);
+                obstacles.add(cactus);
+                break;
+            default:
+                System.out.println("Unknown entity type: " + sd.type);
+                break;
+        }
     }
 
     private void update() {
 
         // Check game over conditions first
         checkGameOver();
+        checkStage1Complete(); // Add stage completion check
 
         if (!inGame || isPaused) {
             return; // Don't update if game is over or paused
         }
 
-        // Check enemy spawn
-        // TODO this approach can only spawn one enemy at a frame
+        // Handle dynamic spawning based on counters
+        handleDynamicSpawning();
+
+        // Check fixed enemy spawn (for initial spawns only)
         SpawnDetails sd = spawnMap.get(frame);
         if (sd != null) {
             System.out.println("Spawning at frame " + frame + ": " + sd.type + " at (" + sd.x + ", " + sd.y + ")");
-            // Create a new enemy based on the spawn details
-            switch (sd.type) {
-                case "Alien1":
-                    Enemy enemy = new Alien1(sd.x, sd.y);
-                    enemies.add(enemy);
-                    break;
-                // Add more cases for different enemy types if needed
-                case "Alien2":
-                    // Enemy enemy2 = new Alien2(sd.x, sd.y);
-                    // enemies.add(enemy2);
-                    break;
-                case "PowerUp-SpeedUp":
-                    // Handle speed up item spawn
-                    PowerUp speedUp = new SpeedUp(sd.x, sd.y);
-                    powerups.add(speedUp);
-                    break;
-                
-                //obstacles
-                case "Tumbleweed":
-                    System.out.println("Creating Tumbleweed at (" + sd.x + ", " + sd.y + ")");
-                    Obstacle tumbleweed = new Tumbleweed(sd.x, sd.y);
-                    obstacles.add(tumbleweed);
-                    System.out.println("Tumbleweed added. Total obstacles: " + obstacles.size());
-                    break;
-                case "Cactus":
-                    Obstacle cactus = new Cactus(sd.x, sd.y);
-                    obstacles.add(cactus);
-                    break;
-                default:
-                    System.out.println("Unknown enemy type: " + sd.type);
-                    break;
-            }
+            spawnEntity(sd);
         }
 
         checkGameOver();
@@ -617,7 +712,7 @@ public class Scene1 extends JPanel {
             }
 
             if (!bomb.isDestroyed()) {
-                bomb.setX(bomb.getX() - 4);
+                bomb.setX(bomb.getX() - 4); // bombs fall left and fast
                 if (bomb.getY() >= GROUND - BOMB_HEIGHT) {
                     bomb.setDestroyed(true);
                 }
@@ -660,11 +755,21 @@ public class Scene1 extends JPanel {
             int key = e.getKeyCode();
 
             if (!inGame) {
-                // Handle game over input
-                if (key == KeyEvent.VK_SPACE) {
-                    restartGame();
-                } else if (key == KeyEvent.VK_ESCAPE) {
-                    System.exit(0);
+                if (isGameWon) {
+                    // Handle stage complete input
+                    if (key == KeyEvent.VK_SPACE) {
+                        // Transition to cutscene
+                        transitionToCutscene();
+                    } else if (key == KeyEvent.VK_ESCAPE) {
+                        System.exit(0);
+                    }
+                } else {
+                    // Handle game over input
+                    if (key == KeyEvent.VK_SPACE) {
+                        restartGame();
+                    } else if (key == KeyEvent.VK_ESCAPE) {
+                        System.exit(0);
+                    }
                 }
                 return;
             }
@@ -681,6 +786,40 @@ public class Scene1 extends JPanel {
             }
 
             player.keyPressed(e);
+        }
+    }
+
+    private void transitionToCutscene() {
+        System.out.println("Transitioning to cutscene...");
+        
+        // Switch to cutscene in the main game window
+        if (game != null) {
+            game.loadCutscene();
+        }
+    }
+
+    private void checkStage1Complete() {
+        // Check if player has completed Stage 1
+        if (frame >= 300) { //  Stage 1 lasts for 300 frames-> change after testing
+            isGameWon = true;
+            inGame = false;
+            gameOverMessage = "Stage 1 Complete!";
+            
+            // Stop the timer
+            if (timer != null && timer.isRunning()) {
+                timer.stop();
+            }
+
+            // Stop audio
+            try {
+                if (audioPlayer != null) {
+                    audioPlayer.stop();
+                }
+            } catch (Exception e) {
+                System.err.println("Error stopping audio: " + e.getMessage());
+            }
+
+            System.out.println("Stage 1 complete!");
         }
     }
 
@@ -760,9 +899,17 @@ public class Scene1 extends JPanel {
         // Reset game state
         inGame = true;
         isPaused = false; // Reset pause state
+        isGameWon = false; // Reset win state
         frame = 0;
         deaths = 0;
         direction = -1;
+        
+        // Reset spawn counters
+        tumbleweedSpawnCounter = 0;
+        cactusSpawnCounter = 0;
+        alienSpawnCounter = 0;
+        speedupCounter = 0;
+        shieldCounter = 0;
 
         // Clear all game objects
         if (enemies != null)

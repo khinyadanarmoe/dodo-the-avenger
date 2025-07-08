@@ -21,6 +21,10 @@ public class Player extends Sprite {
     private boolean invulnerable = false;
     private int invulnerabilityTimer = 0;
     private static final int INVULNERABILITY_DURATION = 60; // 1 second at 60 FPS
+    
+    // Shield System
+    private boolean shieldActive = false;
+    private int shieldTimer = 0;
 
     // Jumping physics
     private int dy = 0; // Vertical velocity
@@ -34,12 +38,23 @@ public class Player extends Sprite {
     public static final int DIR_RIGHT = 1;
     private int facing = DIR_RIGHT; // Always facing right
 
+    // Player actions
+    private static final String ACT_STANDING = "standing";
     private static final String ACT_RUNNING = "running";
     private static final String ACT_JUMPING = "jumping";
     private static final String ACT_SHOOTING = "shooting";
     private static final String ACT_JUMPING_SHOOTING = "jumping_shooting";
     private static final String ACT_RUNNING_SHOOTING = "running_shooting";
     private String action = ACT_RUNNING; // Default to running right
+    private String defaultAction = ACT_RUNNING; // Default action when idle
+    
+    // Scene type for different player behaviors
+    public static final String SCENE_SIDE_SCROLLING = "side_scrolling";
+    public static final String SCENE_BOSS_FIGHT = "boss_fight";
+    private String sceneType = SCENE_SIDE_SCROLLING; // Default to side-scrolling
+    
+    // Movement variables
+    private int dx = 0; // Horizontal velocity
 
     private int clipNo = 0;
     private final Rectangle[] clips = new Rectangle[] {
@@ -97,7 +112,18 @@ public class Player extends Sprite {
         Rectangle bound = clips[clipNo];
         // TODO this can be cached.
         BufferedImage bImage = toBufferedImage(image);
-        return bImage.getSubimage(bound.x, bound.y, bound.width, bound.height);
+        BufferedImage subImage = bImage.getSubimage(bound.x, bound.y, bound.width, bound.height);
+        
+        // Flip the image horizontally if facing left
+        if (facing == DIR_LEFT) {
+            BufferedImage flippedImage = new BufferedImage(subImage.getWidth(), subImage.getHeight(), subImage.getType());
+            java.awt.Graphics2D g2d = flippedImage.createGraphics();
+            g2d.drawImage(subImage, subImage.getWidth(), 0, -subImage.getWidth(), subImage.getHeight(), null);
+            g2d.dispose();
+            return flippedImage;
+        }
+        
+        return subImage;
     }
 
     private void initPlayer() {
@@ -112,9 +138,21 @@ public class Player extends Sprite {
     }
 
     public void act() {
-        System.out.printf("Player action=%s frame=%d facing=%d\n", action, frame, facing);
+        System.out.printf("Player action=%s frame=%d facing=%d sceneType=%s\n", action, frame, facing, sceneType);
 
         frame++;
+        
+        // Handle horizontal movement (only in boss fight scenes)
+        if (sceneType == SCENE_BOSS_FIGHT) {
+            x += dx;
+            
+            // Keep player within screen bounds
+            if (x < 0) {
+                x = 0;
+            } else if (x > BOARD_WIDTH - getWidth()) {
+                x = BOARD_WIDTH - getWidth();
+            }
+        }
         
         // Handle invulnerability timer
         if (invulnerable && invulnerabilityTimer > 0) {
@@ -124,8 +162,27 @@ public class Player extends Sprite {
                 System.out.println("Player is no longer invulnerable");
             }
         }
+        
+        // Handle shield timer
+        if (shieldActive && shieldTimer > 0) {
+            shieldTimer--;
+            if (shieldTimer <= 0) {
+                shieldActive = false;
+                System.out.println("Shield protection has expired");
+            }
+        }
 
         switch (action) {
+
+            case ACT_STANDING:
+                if (frame <= 10) {
+                    clipNo = 0; // Standing still
+                } else {
+                    frame = 0; // Reset frame for standing animation
+                    clipNo = 1; // Blink animation
+                }
+                break;
+
             case ACT_RUNNING:
                 if (frame <= 10) {
                     clipNo = 3;
@@ -163,15 +220,15 @@ public class Player extends Sprite {
                     dy = 0;
                     dx = 0; // Stop horizontal movement when landing
                     isOnGround = true;
-                    // Return to running when landing
+                    // Return to default action when landing
                     if (action == ACT_JUMPING) {
-                        action = ACT_RUNNING;
+                        action = defaultAction;
                         frame = 0;
-                        clipNo = 2;
+                        clipNo = (defaultAction == ACT_STANDING) ? 0 : 2;
                     } else { // ACT_JUMPING_SHOOTING
-                        action = ACT_RUNNING_SHOOTING;
+                        action = (defaultAction == ACT_STANDING) ? ACT_SHOOTING : ACT_RUNNING_SHOOTING;
                         frame = 0;
-                        clipNo = 8;
+                        clipNo = (defaultAction == ACT_STANDING) ? 7 : 8;
                     }
                 } else {
                     // Still in air - use jumping animation
@@ -217,65 +274,119 @@ public class Player extends Sprite {
         int key = e.getKeyCode();
 
         switch (action) {
-            case ACT_RUNNING:
-                if (key == KeyEvent.VK_UP && isOnGround) {
+            case ACT_STANDING:
+                if ((key == KeyEvent.VK_UP || key == KeyEvent.VK_SPACE) && isOnGround) {
                     action = ACT_JUMPING;
                     frame = 0;
                     clipNo = 5;
                     dy = JUMP_STRENGTH; // Start jump with upward velocity
-                    // dx = HORIZONTAL_SPEED; // Automatically move forward when jumping
                     isOnGround = false;
-                } else if (key == KeyEvent.VK_ENTER) {
-                    action = ACT_RUNNING_SHOOTING;
-                    frame = 0;
-                    isFiring = true;
-                    clipNo = 8;
+                } else if (sceneType == SCENE_BOSS_FIGHT) {
+                    // Boss fight: Allow shooting and left/right movement
+                    if (key == KeyEvent.VK_ENTER) {
+                        action = ACT_SHOOTING;
+                        frame = 0;
+                        isFiring = true;
+                        clipNo = 7;
+                    } else if (key == KeyEvent.VK_LEFT) {
+                        dx = -3; // Move left
+                        facing = DIR_LEFT;
+                        action = ACT_RUNNING;
+                        frame = 0;
+                        clipNo = 2;
+                    } else if (key == KeyEvent.VK_RIGHT) {
+                        dx = 3; // Move right
+                        facing = DIR_RIGHT;
+                        action = ACT_RUNNING;
+                        frame = 0;
+                        clipNo = 2;
+                    }
                 }
+                // Side-scrolling: No left/right movement or shooting - only jumping allowed
+                break;
+                
+            case ACT_RUNNING:
+                if ((key == KeyEvent.VK_UP || key == KeyEvent.VK_SPACE) && isOnGround) {
+                    action = ACT_JUMPING;
+                    frame = 0;
+                    clipNo = 5;
+                    dy = JUMP_STRENGTH; // Start jump with upward velocity
+                    isOnGround = false;
+                } else if (sceneType == SCENE_BOSS_FIGHT) {
+                    // Boss fight: Allow shooting and left/right movement
+                    if (key == KeyEvent.VK_ENTER) {
+                        action = ACT_RUNNING_SHOOTING;
+                        frame = 0;
+                        isFiring = true;
+                        clipNo = 8;
+                    } else if (key == KeyEvent.VK_LEFT) {
+                        dx = -3; // Move left
+                        facing = DIR_LEFT;
+                    } else if (key == KeyEvent.VK_RIGHT) {
+                        dx = 3; // Move right
+                        facing = DIR_RIGHT;
+                    }
+                }
+                // Side-scrolling: No left/right movement or shooting - only jumping allowed
                 break;
 
             case ACT_JUMPING:
-                if (key == KeyEvent.VK_ENTER) {
-                    action = ACT_JUMPING_SHOOTING;
-                    frame = 0;
-                    isFiring = true;
-                    clipNo = 6;
-                } else if (key == KeyEvent.VK_LEFT) {
-                    // dx = -HORIZONTAL_SPEED; // Move left while jumping
-                } else if (key == KeyEvent.VK_RIGHT) {
-                    // dx = HORIZONTAL_SPEED; // Move right while jumping
+                if (sceneType == SCENE_BOSS_FIGHT) {
+                    // Boss fight: Allow shooting and left/right movement while jumping
+                    if (key == KeyEvent.VK_ENTER) {
+                        action = ACT_JUMPING_SHOOTING;
+                        frame = 0;
+                        isFiring = true;
+                        clipNo = 6;
+                    } else if (key == KeyEvent.VK_LEFT) {
+                        dx = -3; // Move left while jumping
+                    } else if (key == KeyEvent.VK_RIGHT) {
+                        dx = 3; // Move right while jumping
+                    }
                 }
+                // Side-scrolling: No left/right movement or shooting while jumping
                 break;
 
             case ACT_SHOOTING:
                 // Player is already shooting, handle other keys
-                if (key == KeyEvent.VK_UP && isOnGround) {
-                    action = ACT_JUMPING_SHOOTING;
-                    frame = 0;
-                    clipNo = 6;
-                    dy = JUMP_STRENGTH; // Start jump with upward velocity
-                    // dx = HORIZONTAL_SPEED; // Automatically move forward when jumping
-                    isOnGround = false;
+                if (sceneType == SCENE_BOSS_FIGHT) {
+                    // Boss fight: Allow jumping while shooting
+                    if ((key == KeyEvent.VK_UP || key == KeyEvent.VK_SPACE) && isOnGround) {
+                        action = ACT_JUMPING_SHOOTING;
+                        frame = 0;
+                        clipNo = 6;
+                        dy = JUMP_STRENGTH; // Start jump with upward velocity
+                        isOnGround = false;
+                    }
                 }
+                // Side-scrolling: No actions while shooting (shooting not allowed in side-scrolling)
                 break;
 
             case ACT_JUMPING_SHOOTING:
-                // Player is jumping and shooting - can still move horizontally
-                if (key == KeyEvent.VK_LEFT) {
-                    // dx = -HORIZONTAL_SPEED; // Move left while jumping
-                } else if (key == KeyEvent.VK_RIGHT) {
-                    // dx = HORIZONTAL_SPEED; // Move right while jumping
+                // Player is jumping and shooting
+                if (sceneType == SCENE_BOSS_FIGHT) {
+                    // Boss fight: Allow left/right movement while jumping and shooting
+                    if (key == KeyEvent.VK_LEFT) {
+                        dx = -3; // Move left while jumping
+                    } else if (key == KeyEvent.VK_RIGHT) {
+                        dx = 3; // Move right while jumping
+                    }
                 }
+                // Side-scrolling: No left/right movement while jumping and shooting
                 break;
 
             case ACT_RUNNING_SHOOTING:
-                if (key == KeyEvent.VK_UP && isOnGround) {
-                    action = ACT_JUMPING_SHOOTING;
-                    frame = 0;
-                    clipNo = 6;
-                    dy = JUMP_STRENGTH; // Start jump with upward velocity
-                    // dx = HORIZONTAL_SPEED; // Automatically move forward when jumping
-                    isOnGround = false;
+                if (sceneType == SCENE_BOSS_FIGHT) {
+                    // Boss fight: Allow jumping while running and shooting
+                    if ((key == KeyEvent.VK_UP || key == KeyEvent.VK_SPACE) && isOnGround) {
+                        action = ACT_JUMPING_SHOOTING;
+                        frame = 0;
+                        clipNo = 6;
+                        dy = JUMP_STRENGTH; // Start jump with upward velocity
+                        isOnGround = false;
+                    }
                 }
+                // Side-scrolling: No actions while running and shooting (shooting not allowed in side-scrolling)
                 break;
         }
     }
@@ -284,16 +395,20 @@ public class Player extends Sprite {
         int key = e.getKeyCode();
 
         switch (action) {
+            case ACT_STANDING:
+                // Player stays in standing mode until movement keys are pressed
+                break;
+                
             case ACT_JUMPING:
                 // Don't change action until player lands (handled in act() method)
                 break;
 
             case ACT_SHOOTING:
                 if (key == KeyEvent.VK_ENTER) {
-                    action = ACT_RUNNING;
+                    action = defaultAction; // Return to default action (standing or running)
                     isFiring = false;
                     frame = 0;
-                    clipNo = 2;
+                    clipNo = (defaultAction == ACT_STANDING) ? 0 : 2;
                 }
                 break;
 
@@ -310,11 +425,25 @@ public class Player extends Sprite {
             case ACT_RUNNING_SHOOTING:
                 if (key == KeyEvent.VK_ENTER) {
                     isFiring = false;
-                    action = ACT_RUNNING;
+                    action = defaultAction; // Return to default action
                     frame = 0;
-                    clipNo = 2;
+                    clipNo = (defaultAction == ACT_STANDING) ? 0 : 2;
                 }
                 break;
+
+            case ACT_RUNNING:
+                if (sceneType == SCENE_BOSS_FIGHT) {
+                    // Boss fight: Allow stopping movement when keys are released
+                    if (key == KeyEvent.VK_LEFT || key == KeyEvent.VK_RIGHT) {
+                        dx = 0; // Stop horizontal movement
+                        action = ACT_STANDING; // Switch to standing mode
+                        frame = 0;
+                        clipNo = 0; // Standing still
+                    }
+                }
+                // Side-scrolling: Player always runs, no key release handling for movement
+                break;
+            
         }
     }
 
@@ -328,6 +457,12 @@ public class Player extends Sprite {
     }
     
     public void takeDamage(int damage) {
+        // Check if shield is active - shield blocks all damage
+        if (shieldActive) {
+            System.out.println("Shield blocked " + damage + " damage!");
+            return;
+        }
+        
         if (!invulnerable && currentHP > 0) {
             currentHP -= damage;
             invulnerable = true;
@@ -357,14 +492,61 @@ public class Player extends Sprite {
         invulnerable = false;
         invulnerabilityTimer = 0;
         
+        // Reset shield state
+        shieldActive = false;
+        shieldTimer = 0;
+        
         // Reset jumping state
         dy = 0;
         dx = 0;
         isOnGround = true;
         y = START_Y;
         x = START_X; // Reset to starting position
-        action = ACT_RUNNING;
+        action = defaultAction; // Use default action instead of always running
         frame = 0;
-        clipNo = 2;
+        clipNo = (defaultAction == ACT_STANDING) ? 0 : 2;
+    }
+    
+    // Shield System Methods
+    public void activateShield(int duration) {
+        shieldActive = true;
+        shieldTimer = duration;
+        System.out.println("Shield activated for " + duration + " frames");
+    }
+    
+    public boolean isShieldActive() {
+        return shieldActive;
+    }
+    
+    public int getShieldTimer() {
+        return shieldTimer;
+    }
+    
+    // Method to set player to standing mode (for boss fight)
+    public void setToStandingMode() {
+        action = ACT_STANDING;
+        defaultAction = ACT_STANDING;
+        sceneType = SCENE_BOSS_FIGHT; // Set scene type to boss fight
+        frame = 0;
+        clipNo = 0; // Standing still clip
+        dy = 0;
+        dx = 0;
+        isOnGround = true;
+        isFiring = false;
+        System.out.println("Player set to standing mode (boss fight)");
+    }
+    
+    // Method to set player to running mode (for side-scrolling)
+    public void setToRunningMode() {
+        action = ACT_RUNNING;
+        defaultAction = ACT_RUNNING;
+        sceneType = SCENE_SIDE_SCROLLING; // Set scene type to side-scrolling
+        frame = 0;
+        clipNo = 2; // Running clip
+        dy = 0;
+        dx = 0;
+        isOnGround = true;
+        isFiring = false;
+        System.out.println("Player set to running mode (side-scrolling)");
     }
 }

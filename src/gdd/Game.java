@@ -2,16 +2,22 @@ package gdd;
 
 import gdd.scene.Scene1;
 import gdd.scene.TitleScene;
+import gdd.scene.Cutscene;
+import gdd.scene.FinalScene;
 import javax.swing.JFrame;
 
 public class Game extends JFrame  {
 
     TitleScene titleScene;
     Scene1 scene1;
+    Cutscene cutscene;
+    FinalScene finalScene;
 
     public Game() {
         titleScene = new TitleScene(this);
         scene1 = new Scene1(this);
+        cutscene = new Cutscene(this);
+        finalScene = new FinalScene(this);
         initUI();
         loadTitle();
         // loadScene2();
@@ -19,7 +25,7 @@ public class Game extends JFrame  {
 
     private void initUI() {
 
-        setTitle("Space Invaders");
+        setTitle("DoDo");
         setSize(Global.BOARD_WIDTH, Global.BOARD_HEIGHT);
 
         setDefaultCloseOperation(EXIT_ON_CLOSE);
@@ -50,4 +56,21 @@ public class Game extends JFrame  {
         repaint();
     }
 
+    public void loadCutscene() {
+        getContentPane().removeAll();
+        add(cutscene);
+        scene1.stop();
+        cutscene.start();
+        revalidate();
+        repaint();
+    }
+
+    public void loadFinalScene() {
+        getContentPane().removeAll();
+        add(finalScene);
+        cutscene.stop();
+        finalScene.start();
+        revalidate();
+        repaint();
+    }
 }
