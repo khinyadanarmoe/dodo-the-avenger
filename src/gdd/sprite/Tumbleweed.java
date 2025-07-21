@@ -23,8 +23,8 @@ public class Tumbleweed extends Obstacle {
         
         // Scale the image
         var scaledImage = ii.getImage().getScaledInstance(
-            ii.getIconWidth() * SCALE_FACTOR * 2,
-            ii.getIconHeight() * SCALE_FACTOR * 2,
+            ii.getIconWidth() * SCALE_FACTOR,
+            ii.getIconHeight() * SCALE_FACTOR,
             java.awt.Image.SCALE_SMOOTH);
         setImage(scaledImage);
     }

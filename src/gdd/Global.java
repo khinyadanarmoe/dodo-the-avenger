@@ -5,7 +5,7 @@ public class Global {
         // Prevent instantiation
     }
 
-    public static final int SCALE_FACTOR = 3; // Scaling factor for sprites
+    public static final int SCALE_FACTOR = 2; // Scaling factor for sprites
 
     public static final int BOARD_WIDTH = 1280; // Doubled from 640
     public static final int BOARD_HEIGHT = 720; // Doubled from 360
@@ -25,23 +25,23 @@ public class Global {
     public static final int NUMBER_OF_ALIENS_TO_DESTROY = 24;
     public static final int CHANCE = 5;
     public static final int DELAY = 17;
-    public static final int PLAYER_WIDTH = 30; // Doubled from 15
-    public static final int PLAYER_HEIGHT = 20; // Doubled from 10
+    public static final int PLAYER_WIDTH = 15; // Doubled from 15
+    public static final int PLAYER_HEIGHT = 10; // Doubled from 10
 
     // Images
     public static final String IMG_ENEMY = "src/images/alien.png";
-    public static final String IMG_PLAYER = "src/images/megaman-sprite.png";
+    public static final String IMG_PLAYER = "src/dodoSprites/dodoRun.png";
     public static final String IMG_SHOT = "src/images/shot.png";
     public static final String IMG_EXPLOSION = "src/images/explosion.png";
     public static final String IMG_TITLE = "src/images/title.png";
     public static final String IMG_POWERUP_SPEEDUP = "src/images/powerup-s.png";
     
     // Obstacles
-    public static final String IMG_TUMBLEWEED = "src/images/tumbleweed.png"; // TODO: Replace with actual tumbleweed image
-    public static final String IMG_CACTUS = "src/images/cactus.png"; // TODO: Replace with actual cactus image
+    public static final String IMG_TUMBLEWEED = "src/dodoSprites/tumbleweed.png";
+    public static final String IMG_CACTUS = "src/dodoSprites/cactus.png"; 
     
     //background
-    public static final String IMG_BACKGROUND = "src/images/background.png";
+    public static final String IMG_BACKGROUND = "src/dodoSprites/desertBG.png";
     //game start
     public static final String IMG_START = "src/images/game_start.png";
     // game pause

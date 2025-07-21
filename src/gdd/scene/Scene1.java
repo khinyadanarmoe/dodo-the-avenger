@@ -81,7 +81,7 @@ public class Scene1 extends JPanel {
     
     // Spawn intervals (frames between spawns)
     private static final int TUMBLEWEED_SPAWN_INTERVAL = 180; // 3 seconds at 60 FPS
-    private static final int CACTUS_SPAWN_INTERVAL = 240; // 4 seconds at 60 FPS
+    private static final int CACTUS_SPAWN_INTERVAL = 600; // 10 seconds at 60 FPS
     private static final int ALIEN_SPAWN_INTERVAL = 300; // 5 seconds at 60 FPS
     private static final int SPEEDUP_SPAWN_INTERVAL = 360; // 6 seconds at 60 FPS
     private static final int SHIELD_SPAWN_INTERVAL = 300; // 5 seconds at 60 FPS
@@ -215,11 +215,12 @@ public class Scene1 extends JPanel {
     private void drawPlayer(Graphics g) {
 
         if (player.isVisible()) {
-            g.drawImage(player.getImage(), player.getX(), player.getY(), this);
+            
+            g.drawImage(player.getImage(), player.getX(), player.getY(), player.getWidth(), player.getHeight(), this);
             
             // Debug: Draw player bounds
             g.setColor(Color.BLUE);
-            g.drawRect(player.getX(), player.getY(), player.getWidth(), player.getHeight());
+            g.drawRect(player.getX() + 24, player.getY(), player.getWidth() - 30, player.getHeight());
         }
 
         if (player.isDying()) {
@@ -549,11 +550,11 @@ public class Scene1 extends JPanel {
                 powerups.add(shield);
                 break;
             case "Tumbleweed":
-                Obstacle tumbleweed = new Tumbleweed(sd.x, sd.y);
+                Obstacle tumbleweed = new Tumbleweed(sd.x, sd.y - 20);
                 obstacles.add(tumbleweed);
                 break;
             case "Cactus":
-                Obstacle cactus = new Cactus(sd.x, sd.y);
+                Obstacle cactus = new Cactus(sd.x, sd.y - 100);
                 obstacles.add(cactus);
                 break;
             default:
@@ -800,7 +801,7 @@ public class Scene1 extends JPanel {
 
     private void checkStage1Complete() {
         // Check if player has completed Stage 1
-        if (frame >= 300) { //  Stage 1 lasts for 300 frames-> change after testing
+        if (frame >= 3000) {  //TODO: change Stage 1 complete logic
             isGameWon = true;
             inGame = false;
             gameOverMessage = "Stage 1 Complete!";
@@ -838,15 +839,15 @@ public class Scene1 extends JPanel {
         }
 
         // Check enemy invasion (enemies reach the ground)
-        for (Enemy enemy : enemies) {
-            if (enemy.isVisible()) {
-                int y = enemy.getY();
-                if (y > GROUND - ALIEN_HEIGHT) {
-                    triggerGameOver("Invasion!");
-                    return;
-                }
-            }
-        }
+        // for (Enemy enemy : enemies) {
+        //     if (enemy.isVisible()) {
+        //         int y = enemy.getY();
+        //         if (y > GROUND - ALIEN_HEIGHT) {
+        //             triggerGameOver("Invasion!");
+        //             return;
+        //         }
+        //     }
+        // }
 
         // Check enemy-player collision (direct contact = game over)
         for (Enemy enemy : enemies) {

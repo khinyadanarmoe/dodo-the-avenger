@@ -11,7 +11,7 @@ import javax.swing.ImageIcon;
 public class Player extends Sprite {
 
     private static final int START_X = 100;
-    private static final int START_Y = GROUND - PLAYER_HEIGHT; // Position player so bottom is at ground level
+    private static final int START_Y = GROUND - PLAYER_HEIGHT - 50; // Position player so bottom is at ground level
     private int frame = 0;
     private boolean isFiring = false;
     
@@ -57,18 +57,25 @@ public class Player extends Sprite {
     private int dx = 0; // Horizontal velocity
 
     private int clipNo = 0;
-    private final Rectangle[] clips = new Rectangle[] {
-            new Rectangle(18, 20, 80, 90), // 0: stand still
-            new Rectangle(110, 20, 80, 90), // 1: stand blink
-            new Rectangle(294, 20, 90, 90), // 2: run 1
-            new Rectangle(400, 20, 60, 90), // 3: run 2
-            new Rectangle(470, 20, 80, 90), // 4: run 3
-            new Rectangle(138, 230, 100, 110), // 5: jump 1, no firing
-            new Rectangle(18, 230, 118, 110), // 6: jump 2, firing
-            new Rectangle(128, 124, 124, 94), // 7: stand Shoot
-            new Rectangle(248, 120, 118, 94), // 8: run shoot 1
-            new Rectangle(372, 120, 118, 94), // 9: run shoot 2
-            new Rectangle(486, 120, 118, 94), // 10: run shoot 3
+    // private final Rectangle[] clips = new Rectangle[] {
+    //         new Rectangle(18, 20, 80, 90), // 0: stand still
+    //         new Rectangle(110, 20, 80, 90), // 1: stand blink
+    //         new Rectangle(294, 20, 90, 90), // 2: run 1
+    //         new Rectangle(400, 20, 60, 90), // 3: run 2
+    //         new Rectangle(470, 20, 80, 90), // 4: run 3
+    //         new Rectangle(138, 230, 100, 110), // 5: jump 1, no firing
+    //         new Rectangle(18, 230, 118, 110), // 6: jump 2, firing
+    //         new Rectangle(128, 124, 124, 94), // 7: stand Shoot
+    //         new Rectangle(248, 120, 118, 94), // 8: run shoot 1
+    //         new Rectangle(372, 120, 118, 94), // 9: run shoot 2
+    //         new Rectangle(486, 120, 118, 94), // 10: run shoot 3
+    // };
+
+        private final Rectangle[] clips = new Rectangle[] {
+            new Rectangle(0, 0, 64, 64), // 0: stand still
+            new Rectangle(64, 0, 64, 64), // 1: run 1
+            new Rectangle(0, 64, 64, 64), // 2: run 2
+            new Rectangle(64, 64, 64, 64), // 3: run 3
     };
 
     public Player() {
@@ -95,7 +102,7 @@ public class Player extends Sprite {
 
     @Override
     public int getHeight() {
-        return clips[clipNo].height;
+        return clips[clipNo].height * SCALE_FACTOR;
     }
 
     public int getFacing() {
@@ -104,7 +111,7 @@ public class Player extends Sprite {
 
     @Override
     public int getWidth() {
-        return clips[clipNo].width;
+        return clips[clipNo].width * SCALE_FACTOR;
     }
 
     @Override
@@ -134,7 +141,7 @@ public class Player extends Sprite {
         setY(START_Y);
         
         // Player stays in same position - no horizontal movement needed
-        clipNo = 2; // Start with running animation
+        clipNo = 1;
     }
 
     public void act() {
@@ -174,99 +181,99 @@ public class Player extends Sprite {
 
         switch (action) {
 
-            case ACT_STANDING:
-                if (frame <= 10) {
-                    clipNo = 0; // Standing still
-                } else {
-                    frame = 0; // Reset frame for standing animation
-                    clipNo = 1; // Blink animation
-                }
-                break;
+            // case ACT_STANDING:
+            //     if (frame <= 10) {
+            //         clipNo = 0; // Standing still
+            //     } else {
+            //         frame = 0; // Reset frame for standing animation
+            //         clipNo = 1; // Blink animation
+            //     }
+            //     break;
 
             case ACT_RUNNING:
-                if (frame <= 10) {
-                    clipNo = 3;
-                } else if (frame <= 20) {
+                if (frame <= 10) { 
                     clipNo = 2;
+                } else if (frame <= 20) {
+                    clipNo = 1;
                 } else if (frame <= 30) {
-                    clipNo = 3;
+                    clipNo = 2;
                 } else if (frame <= 40) {
-                    clipNo = 4;
+                    clipNo = 3;
                 } else {
                     frame = 0;
-                    clipNo = 2;
+                    clipNo = 1;
                 }
                 break;
 
-            case ACT_JUMPING:
-            case ACT_JUMPING_SHOOTING:
-                // Apply gravity and vertical movement
-                dy += GRAVITY;
-                y += dy;
+            // case ACT_JUMPING:
+            // case ACT_JUMPING_SHOOTING:
+            //     // Apply gravity and vertical movement
+            //     dy += GRAVITY;
+            //     y += dy;
                 
-                // Apply horizontal movement during jumping
-                x += dx;
+            //     // Apply horizontal movement during jumping
+            //     x += dx;
                 
-                // Keep player within screen bounds
-                if (x < 0) {
-                    x = 0;
-                } else if (x > BOARD_WIDTH - getWidth()) {
-                    x = BOARD_WIDTH - getWidth();
-                }
+            //     // Keep player within screen bounds
+            //     if (x < 0) {
+            //         x = 0;
+            //     } else if (x > BOARD_WIDTH - getWidth()) {
+            //         x = BOARD_WIDTH - getWidth();
+            //     }
                 
-                // Check if player lands back on ground
-                if (y >= START_Y) {
-                    y = START_Y;
-                    dy = 0;
-                    dx = 0; // Stop horizontal movement when landing
-                    isOnGround = true;
-                    // Return to default action when landing
-                    if (action == ACT_JUMPING) {
-                        action = defaultAction;
-                        frame = 0;
-                        clipNo = (defaultAction == ACT_STANDING) ? 0 : 2;
-                    } else { // ACT_JUMPING_SHOOTING
-                        action = (defaultAction == ACT_STANDING) ? ACT_SHOOTING : ACT_RUNNING_SHOOTING;
-                        frame = 0;
-                        clipNo = (defaultAction == ACT_STANDING) ? 7 : 8;
-                    }
-                } else {
-                    // Still in air - use jumping animation
-                    if (action == ACT_JUMPING) {
-                        clipNo = (dy < 0) ? 5 : 6; // Rising or falling
-                    } else { // ACT_JUMPING_SHOOTING
-                        clipNo = 6; // Jump shooting animation
-                    }
-                }
-                break;
+            //     // Check if player lands back on ground
+            //     if (y >= START_Y) {
+            //         y = START_Y;
+            //         dy = 0;
+            //         dx = 0; // Stop horizontal movement when landing
+            //         isOnGround = true;
+            //         // Return to default action when landing
+            //         if (action == ACT_JUMPING) {
+            //             action = defaultAction;
+            //             frame = 0;
+            //             clipNo = (defaultAction == ACT_STANDING) ? 0 : 2;
+            //         } else { // ACT_JUMPING_SHOOTING
+            //             action = (defaultAction == ACT_STANDING) ? ACT_SHOOTING : ACT_RUNNING_SHOOTING;
+            //             frame = 0;
+            //             clipNo = (defaultAction == ACT_STANDING) ? 7 : 8;
+            //         }
+            //     } else {
+            //         // Still in air - use jumping animation
+            //         if (action == ACT_JUMPING) {
+            //             clipNo = (dy < 0) ? 5 : 6; // Rising or falling
+            //         } else { // ACT_JUMPING_SHOOTING
+            //             clipNo = 6; // Jump shooting animation
+            //         }
+            //     }
+            //     break;
 
-            case ACT_SHOOTING:
-                if (frame <= 10) {
-                    clipNo = 7;
-                } else {
-                    frame = 0;
-                    clipNo = 7;
-                }
-                break;
+            // case ACT_SHOOTING:
+            //     if (frame <= 10) {
+            //         clipNo = 7;
+            //     } else {
+            //         frame = 0;
+            //         clipNo = 7;
+            //     }
+            //     break;
 
-            case ACT_RUNNING_SHOOTING:
-                if (frame <= 10) {
-                    clipNo = 8;
-                } else if (frame <= 20) {
-                    clipNo = 9;
-                } else if (frame <= 30) {
-                    clipNo = 10;
-                } else {
-                    frame = 0;
-                    clipNo = 8;
-                }
-                break;
+            // case ACT_RUNNING_SHOOTING:
+            //     if (frame <= 10) {
+            //         clipNo = 8;
+            //     } else if (frame <= 20) {
+            //         clipNo = 9;
+            //     } else if (frame <= 30) {
+            //         clipNo = 10;
+            //     } else {
+            //         frame = 0;
+            //         clipNo = 8;
+            //     }
+            //     break;
 
-            default:
-                // Default to running
-                action = ACT_RUNNING;
-                clipNo = 2;
-                break;
+            // default:
+            //     // Default to running
+            //     action = ACT_RUNNING;
+            //     clipNo = 2;
+            //     break;
         }
     }
 
@@ -293,13 +300,13 @@ public class Player extends Sprite {
                         facing = DIR_LEFT;
                         action = ACT_RUNNING;
                         frame = 0;
-                        clipNo = 2;
+                        clipNo = 1;
                     } else if (key == KeyEvent.VK_RIGHT) {
                         dx = 3; // Move right
                         facing = DIR_RIGHT;
                         action = ACT_RUNNING;
                         frame = 0;
-                        clipNo = 2;
+                        clipNo = 1;
                     }
                 }
                 // Side-scrolling: No left/right movement or shooting - only jumping allowed
@@ -542,7 +549,7 @@ public class Player extends Sprite {
         defaultAction = ACT_RUNNING;
         sceneType = SCENE_SIDE_SCROLLING; // Set scene type to side-scrolling
         frame = 0;
-        clipNo = 2; // Running clip
+        clipNo = 1; // Running clip
         dy = 0;
         dx = 0;
         isOnGround = true;
