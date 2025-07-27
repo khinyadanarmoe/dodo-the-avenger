@@ -1,6 +1,10 @@
 package gdd.powerup;
 
 import gdd.sprite.Player;
+
+import static gdd.Global.IMG_POWERUP_ARMOR;
+import static gdd.Global.SCALE_FACTOR;
+
 import java.awt.Image;
 import javax.swing.ImageIcon;
 
@@ -10,10 +14,10 @@ public class Shield extends PowerUp {
         super(x, y);
         // Use an appropriate shield image - you might need to create or find one
         // For now, using the powerup image as placeholder
-        ImageIcon imageIcon = new ImageIcon("src/images/shield.png");
+        ImageIcon imageIcon = new ImageIcon(IMG_POWERUP_ARMOR);
         Image scaledImage = imageIcon.getImage().getScaledInstance(
-            imageIcon.getIconWidth() * 6, 
-            imageIcon.getIconHeight() * 2, 
+            imageIcon.getIconWidth() * SCALE_FACTOR, 
+            imageIcon.getIconHeight() * SCALE_FACTOR, 
             Image.SCALE_SMOOTH
         );
         this.setImage(scaledImage);

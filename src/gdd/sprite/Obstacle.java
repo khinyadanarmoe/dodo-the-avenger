@@ -1,7 +1,5 @@
 package gdd.sprite;
 
-import static gdd.Global.*;
-
 public abstract class Obstacle extends Sprite {
 
     protected int health;

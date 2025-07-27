@@ -1,20 +1,31 @@
 package gdd.scene;
 
 import gdd.Game;
+import gdd.SpawnDetails;
+
 import static gdd.Global.*;
 import gdd.sprite.Player;
+import gdd.sprite.Attack;
 import gdd.sprite.Boss;
+import gdd.sprite.Enemy;
 
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics;
+import java.awt.Image;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import java.util.ArrayList;
+import java.util.List;
+
 import javax.swing.ImageIcon;
 
 public class FinalScene extends BaseGameScene {
 
     private Boss boss;
+    private int attackCounter = 0;
+
+    private List<Attack> attacks;
 
     public FinalScene(Game game) {
         super(game);
@@ -28,15 +39,18 @@ public class FinalScene extends BaseGameScene {
         // Reset player to default state
         player.resetHP();
         
-        // Position player on the left side of screen for boss fight
-        player.setX(150); // Move player to left side
-        player.setY(GROUND - PLAYER_HEIGHT);
+        // // Position player on the left side of screen for boss fight
+        // player.setX(150); // Move player to left side
+        // player.setY(GROUND - PLAYER_HEIGHT);
         
         // Set player to standing mode for boss fight
         player.setToStandingMode();
         
         // Create the boss
         boss = new Boss();
+
+        // Initialize attack list
+        attacks = new ArrayList<>();
     }
 
     @Override
@@ -48,6 +62,14 @@ public class FinalScene extends BaseGameScene {
         if (boss != null && !boss.isDead()) {
             boss.act();
         }
+
+        // Update attacks
+        for (Attack attack : attacks) {
+            attack.act();
+        }
+
+        attackCounter++;
+        handleDynamicSpawning();
         
         // Check collision between player and boss bombs
         checkBombCollisions();
@@ -61,6 +83,33 @@ public class FinalScene extends BaseGameScene {
         // TODO: Add more boss attack patterns
     }
     
+    private void handleDynamicSpawning() {
+ 
+        int side = (int) (Math.random() * 4); // Randomly choose side 0-3
+
+        if (attackCounter >= SpawnDetails.getShortSpawnTime()) {
+            if (side == 0) {
+            // Top side attack
+            Attack attack = new Attack(SpawnDetails.getSpawnX(), 0 - 128, side);
+            attacks.add(attack);
+        } else if (side == 1) {
+            // Right side attack
+            Attack attack = new Attack(BOARD_WIDTH, SpawnDetails.getSpawnY(), side);
+            attacks.add(attack);
+        } else if (side == 2) {
+            // Bottom side attack
+            Attack attack = new Attack(SpawnDetails.getSpawnX(), BOARD_HEIGHT + 128, side);
+            attacks.add(attack);
+        } else if (side == 3) {
+            // Left side attack
+            Attack attack = new Attack(0 - 128, SpawnDetails.getSpawnY(), side);
+            attacks.add(attack);
+        }
+            attackCounter = 0; // Reset counter
+            
+        }
+    }
+
     private void checkBombCollisions() {
         if (boss == null || player == null) return;
         
@@ -83,17 +132,19 @@ public class FinalScene extends BaseGameScene {
         }
     }
 
+
     @Override
     protected void drawScene(Graphics g) {
         drawStaticBackground(g);
         drawBoss(g);
         drawBossBombs(g);
         drawPlayer(g);
+        drawAttacks(g);
     }
 
     @Override
     protected void drawHUD(Graphics g) {
-        // Call parent to draw HP bar
+        // Call parent to draw HP bar 
         super.drawHUD(g);
         
         // Draw boss HP bar
@@ -102,19 +153,19 @@ public class FinalScene extends BaseGameScene {
         }
         
         // Draw boss fight title
-        g.setColor(Color.RED);
-        g.setFont(new Font("Arial", Font.BOLD, 24));
-        String titleText = "BOSS FIGHT";
-        int textWidth = g.getFontMetrics().stringWidth(titleText);
-        g.drawString(titleText, (BOARD_WIDTH - textWidth) / 2, 70); // Moved down to make room for boss HP
+        // g.setColor(Color.RED);
+        // g.setFont(new Font("Arial", Font.BOLD, 24));
+        // String titleText = "BOSS FIGHT";
+        // int textWidth = g.getFontMetrics().stringWidth(titleText);
+        // g.drawString(titleText, (BOARD_WIDTH - textWidth) / 2, 70); // Moved down to make room for boss HP
         
-        // // Instructions
-        // g.setColor(Color.YELLOW);
-        // g.setFont(new Font("Arial", Font.PLAIN, 12));
-        // g.drawString("Arrow Keys: Move", 10, BOARD_HEIGHT - 60);
-        // g.drawString("UP: Jump", 10, BOARD_HEIGHT - 45);
-        // g.drawString("ENTER: Attack Boss (-10 HP)", 10, BOARD_HEIGHT - 30);
-        // g.drawString("P: Pause", 10, BOARD_HEIGHT - 15);
+        // Instructions
+        g.setColor(Color.YELLOW);
+        g.setFont(new Font("Arial", Font.PLAIN, 12));
+        g.drawString("Arrow Keys: Move", 10, BOARD_HEIGHT - 60);
+        g.drawString("UP: Jump", 10, BOARD_HEIGHT - 45);
+        g.drawString("ENTER: Attack Boss (-10 HP)", 10, BOARD_HEIGHT - 30);
+        g.drawString("P: Pause", 10, BOARD_HEIGHT - 15);
     }
 
     @Override
@@ -139,7 +190,7 @@ public class FinalScene extends BaseGameScene {
 
     private void drawStaticBackground(Graphics g) {
         // Draw static background (same as Scene1 but not scrolling)
-        ImageIcon backgroundImage = new ImageIcon(IMG_BACKGROUND);
+        ImageIcon backgroundImage = new ImageIcon(IMG_BACKGROUND_FINAL);
         g.drawImage(backgroundImage.getImage(), 0, 0, BOARD_WIDTH, BOARD_HEIGHT, this);
         
         // Optional: Add a darker overlay to distinguish from Scene1
@@ -159,11 +210,32 @@ public class FinalScene extends BaseGameScene {
 
     private void drawBoss(Graphics g) {
         if (boss != null && boss.isVisible()) {
-            g.drawImage(boss.getImage(), boss.getX(), boss.getY(), this);
-            
+            Image bossImg = boss.getImage();
+            int scaledWidth = (int) (boss.getWidth() * SCALE_FACTOR);
+            int scaledHeight = (int) (boss.getHeight() * SCALE_FACTOR);
+
+            // Center horizontally, above ground
+            int x = (BOARD_WIDTH - scaledWidth) / 2;
+            int y = GROUND - scaledHeight + 50; 
+
+            g.drawImage(bossImg, x, y, scaledWidth, scaledHeight, this);
+
             // Debug: Draw boss bounds
             g.setColor(Color.RED);
-            g.drawRect(boss.getX(), boss.getY(), boss.getWidth(), boss.getHeight());
+            g.drawRect(x, y, scaledWidth, scaledHeight);
+        }
+    }
+
+    private void drawAttacks(Graphics g) {
+        // Draw all attacks (if any)
+        for (Attack attack : attacks) {
+            if (attack.isVisible()) {
+                g.drawImage(attack.getImage(), attack.getX(), attack.getY(), this);
+                
+                // Debug: Draw attack bounds
+                g.setColor(Color.GREEN);
+                g.drawRect(attack.getX(), attack.getY(), attack.getWidth(), attack.getHeight());
+            }
         }
     }
 

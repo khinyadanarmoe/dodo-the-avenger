@@ -35,6 +35,11 @@ public class Enemy extends Sprite {
 
     public void act(int direction) {
         this.x += direction;
+
+        // Remove when off-screen
+        if (this.x < -50) {
+            this.visible = false;
+        }
     }
  
     public Bomb getBomb() {
@@ -60,7 +65,13 @@ public class Enemy extends Sprite {
 
             var bombImg = "src/images/bomb.png";
             var ii = new ImageIcon(bombImg);
-            setImage(ii.getImage());
+            // Scale the bomb image to 3x its original size
+            var scaledImage = ii.getImage().getScaledInstance(
+                ii.getIconWidth() * 3,
+                ii.getIconHeight() * 3,
+                java.awt.Image.SCALE_SMOOTH
+            );
+            setImage(scaledImage);
         }
 
         public void setDestroyed(boolean destroyed) {

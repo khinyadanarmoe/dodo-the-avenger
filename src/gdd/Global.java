@@ -15,26 +15,31 @@ public class Global {
     public static final int GROUND = 580; // Doubled from 290
     public static final int BOMB_HEIGHT = 10; // Doubled from 5
 
-    public static final int ALIEN_HEIGHT = 24; // Doubled from 12
-    public static final int ALIEN_WIDTH = 24; // Doubled from 12
-    public static final int ALIEN_INIT_X = 300; // Doubled from 150
-    public static final int ALIEN_INIT_Y = 10; // Doubled from 5
-    public static final int ALIEN_GAP = 30; // Gap between aliens
+    public static final int  ROBOT_HEIGHT = 24; // Doubled from 12
+    public static final int  ROBOT_WIDTH = 24; // Doubled from 12
+    public static final int  ROBOT_INIT_X = 300; // Doubled from 150
+    public static final int  ROBOT_INIT_Y = 10; // Doubled from 5
+    public static final int  ROBOT_GAP = 30; // Gap between  ROBOTs
 
     public static final int GO_DOWN = 30; // Doubled from 15
-    public static final int NUMBER_OF_ALIENS_TO_DESTROY = 24;
+    public static final int NUMBER_OF_ROBOTS_TO_DESTROY = 24;
     public static final int CHANCE = 5;
     public static final int DELAY = 17;
     public static final int PLAYER_WIDTH = 15; // Doubled from 15
     public static final int PLAYER_HEIGHT = 10; // Doubled from 10
 
     // Images
-    public static final String IMG_ENEMY = "src/images/alien.png";
+    public static final String IMG_ENEMY = "src/dodoSprites/robot.png";
+    public static final String IMG_BOSS = "src/dodoSprites/pharoh.png";
     public static final String IMG_PLAYER = "src/dodoSprites/dodoRun.png";
+    public static final String IMG_PLAYER_TEMP = "src/img/megaman-sprite.png";
     public static final String IMG_SHOT = "src/images/shot.png";
-    public static final String IMG_EXPLOSION = "src/images/explosion.png";
-    public static final String IMG_TITLE = "src/images/title.png";
-    public static final String IMG_POWERUP_SPEEDUP = "src/images/powerup-s.png";
+    public static final String IMG_EXPLOSION = "src/dodoSprites/explosion.png";
+    public static final String IMG_TITLE = "src/dodoSprites/titleScene.png";
+    public static final String IMG_POWERUP_SPEEDUP = "src/dodoSprites/speedUp.png";
+    public static final String IMG_POWERUP_ARMOR = "src/dodoSprites/armor.png";
+    public static final String IMG_BOSS_ATTACK = "src/dodoSprites/bossAttack.png";
+
     
     // Obstacles
     public static final String IMG_TUMBLEWEED = "src/dodoSprites/tumbleweed.png";
@@ -42,12 +47,12 @@ public class Global {
     
     //background
     public static final String IMG_BACKGROUND = "src/dodoSprites/desertBG.png";
-    //game start
-    public static final String IMG_START = "src/images/game_start.png";
+    public static final String IMG_BACKGROUND_FINAL = "src/dodoSprites/pyramid.png";
+
     // game pause
-    public static final String IMG_PAUSE = "src/images/game_pause.png";
+    public static final String IMG_PAUSE = "src/dodoSprites/paused.png";
     // game over
-    public static final String IMG_GAME_OVER = "src/images/game_over.png";
+    public static final String IMG_GAME_OVER = "src/dodoSprites/gameOver.png";
     // game win
     public static final String IMG_GAME_WIN = "src/images/game_win.png";
 

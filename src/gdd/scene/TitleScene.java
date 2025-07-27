@@ -91,7 +91,7 @@ public class TitleScene extends JPanel {
         g.setColor(Color.black);
         g.fillRect(0, 0, d.width, d.height);
 
-        g.drawImage(image, 0, -80, d.width, d.height, this);
+        g.drawImage(image, 0, 0, d.width, d.height, this);
 
         if (frame % 60 < 30) {
             g.setColor(Color.red);
@@ -99,15 +99,15 @@ public class TitleScene extends JPanel {
             g.setColor(Color.white);
         }
 
-        g.setFont(g.getFont().deriveFont(32f));
-        String text = "Press SPACE to Start";
-        int stringWidth = g.getFontMetrics().stringWidth(text);
-        int x = (d.width - stringWidth) / 2;
-        // int stringHeight = g.getFontMetrics().getAscent();
-        // int y = (d.height + stringHeight) / 2;
-        g.drawString(text, x, 600);
+        // g.setFont(g.getFont().deriveFont(32f));
+        // String text = "Press SPACE to Start";
+        // int stringWidth = g.getFontMetrics().stringWidth(text);
+        // int x = (d.width - stringWidth) / 2;
+        // // int stringHeight = g.getFontMetrics().getAscent();
+        // // int y = (d.height + stringHeight) / 2;
+        // g.drawString(text, x, 600);
 
-        g.setColor(Color.gray);
+        g.setColor(Color.white);
         g.setFont(g.getFont().deriveFont(10f));
         g.drawString("Game by", 10, 600);
         g.setFont(new java.awt.Font("Arial", java.awt.Font.ITALIC, 10));

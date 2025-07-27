@@ -8,6 +8,7 @@ import java.util.Scanner;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Clip;
+import javax.sound.sampled.FloatControl;
 import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.UnsupportedAudioFileException;
 
@@ -29,14 +30,18 @@ public class AudioPlayer {
             IOException, LineUnavailableException {
         // create AudioInputStream object
         this.filePath = filePath;
-        audioInputStream
-                = AudioSystem.getAudioInputStream(new File(filePath).getAbsoluteFile());
+        audioInputStream = AudioSystem.getAudioInputStream(new File(filePath).getAbsoluteFile());
 
         // create clip reference
         clip = AudioSystem.getClip();
 
         // open audioInputStream to the clip
         clip.open(audioInputStream);
+
+        // Lower volume by 20%
+        FloatControl gainControl = (FloatControl) clip.getControl(FloatControl.Type.MASTER_GAIN);
+        float dB = (float) (20.0f * Math.log10(0.8)); // 0.8 = 80% (20% lower)
+        gainControl.setValue(dB);
 
         clip.loop(Clip.LOOP_CONTINUOUSLY);
     }
@@ -99,12 +104,11 @@ public class AudioPlayer {
 
     // Method to play the audio
     public void play() {
-        //start the clip
+        // start the clip
         clip.start();
 
         status = "play";
     }
-
 
     // Method to pause the audio
     public void pause() {
@@ -112,8 +116,7 @@ public class AudioPlayer {
             System.out.println("audio is already paused");
             return;
         }
-        this.currentFrame
-                = this.clip.getMicrosecondPosition();
+        this.currentFrame = this.clip.getMicrosecondPosition();
         clip.stop();
         status = "paused";
     }

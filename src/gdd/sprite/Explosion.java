@@ -1,6 +1,9 @@
 package gdd.sprite;
 
 import static gdd.Global.*;
+
+import java.awt.Image;
+
 import javax.swing.ImageIcon;
 
 public class Explosion extends Sprite {
@@ -19,15 +22,16 @@ public class Explosion extends Sprite {
         var ii = new ImageIcon(IMG_EXPLOSION);
 
         // Scale the image to use the global scaling factor
-        var scaledImage = ii.getImage().getScaledInstance(ii.getIconWidth() * SCALE_FACTOR,
-                ii.getIconHeight() * SCALE_FACTOR,
+        var scaledImage = ii.getImage().getScaledInstance(
+                ii.getIconWidth() * 3,
+                ii.getIconHeight() * 3,
                 java.awt.Image.SCALE_SMOOTH);
         setImage(scaledImage);
     }
 
-    public void act(int direction) {
-
-        // this.x += direction;
+    public Image getImage() {
+        // Return the explosion image
+        return image;
     }
 
     @Override

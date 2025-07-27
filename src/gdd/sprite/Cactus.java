@@ -22,8 +22,8 @@ public class Cactus extends Obstacle {
         
         // Scale the image - make cactus bigger than tumbleweed
         var scaledImage = ii.getImage().getScaledInstance(
-            ii.getIconWidth() * SCALE_FACTOR,
-            ii.getIconHeight() * SCALE_FACTOR,
+            ii.getIconWidth() * 3,
+            ii.getIconHeight() * 3,
             java.awt.Image.SCALE_SMOOTH);
         setImage(scaledImage);
     }
@@ -48,8 +48,6 @@ public class Cactus extends Obstacle {
     @Override
     protected void destroy() {
         super.destroy();
-        // TODO: Add cactus destruction effect (breaking into pieces, etc.)
-        System.out.println("Cactus destroyed at position: " + x + ", " + y);
     }
 
     @Override

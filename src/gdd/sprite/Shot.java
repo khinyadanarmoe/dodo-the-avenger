@@ -17,14 +17,16 @@ public class Shot extends Sprite {
     }
 
     private void initShot(int x, int y) {
+        // Create a 10x2 red pixel image
+        int width = 10;
+        int height = 5;
+        java.awt.image.BufferedImage shotImage = new java.awt.image.BufferedImage(width, height, java.awt.image.BufferedImage.TYPE_INT_ARGB);
+        java.awt.Graphics2D g2d = shotImage.createGraphics();
+        g2d.setColor(new java.awt.Color(0xa004d4));
+        g2d.fillRect(0, 0, width, height);
+        g2d.dispose();
 
-        var ii = new ImageIcon(IMG_SHOT);
-
-        // Scale the image to use the global scaling factor
-        var scaledImage = ii.getImage().getScaledInstance(ii.getIconWidth() * SCALE_FACTOR,
-                ii.getIconHeight() * SCALE_FACTOR, 
-                java.awt.Image.SCALE_SMOOTH);
-        setImage(scaledImage);
+        setImage(shotImage);
 
         setX(x + H_SPACE);
         setY(y - V_SPACE);

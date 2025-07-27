@@ -7,12 +7,13 @@ import gdd.SpawnDetails;
 import gdd.powerup.PowerUp;
 import gdd.powerup.SpeedUp;
 import gdd.powerup.Shield;
-import gdd.sprite.Alien1;
+import gdd.sprite.Robot;
 import gdd.sprite.Cactus;
 import gdd.sprite.Enemy;
 import gdd.sprite.Enemy.Bomb;
 import gdd.sprite.Explosion;
 import gdd.sprite.Player;
+import gdd.sprite.Shot;
 import gdd.sprite.Tumbleweed;
 
 import java.awt.Color;
@@ -39,15 +40,15 @@ public class Scene1 extends JPanel {
     // state overlay
     private boolean isPaused = false;
     private boolean isGameWon = false;
-    
 
     private int frame = 0;
     private List<PowerUp> powerups;
     private List<Enemy> enemies;
     private List<Explosion> explosions;
+    private List<Shot> shots;
     private Player player;
 
-    //obstacles
+    // obstacles
     private List<Obstacle> obstacles;
 
     final int BLOCKHEIGHT = 50;
@@ -66,26 +67,15 @@ public class Scene1 extends JPanel {
     private Timer timer;
     private final Game game;
 
-  
-    
-
     private HashMap<Integer, SpawnDetails> spawnMap = new HashMap<>();
     private AudioPlayer audioPlayer;
 
     // Dynamic spawning counters
     private int tumbleweedSpawnCounter = 0;
     private int cactusSpawnCounter = 0;
-    private int alienSpawnCounter = 0;
+    private int robotSpawnCounter = 0;
     private int speedupCounter = 0;
     private int shieldCounter = 0;
-    
-    // Spawn intervals (frames between spawns)
-    private static final int TUMBLEWEED_SPAWN_INTERVAL = 180; // 3 seconds at 60 FPS
-    private static final int CACTUS_SPAWN_INTERVAL = 600; // 10 seconds at 60 FPS
-    private static final int ALIEN_SPAWN_INTERVAL = 300; // 5 seconds at 60 FPS
-    private static final int SPEEDUP_SPAWN_INTERVAL = 360; // 6 seconds at 60 FPS
-    private static final int SHIELD_SPAWN_INTERVAL = 300; // 5 seconds at 60 FPS
-
 
     public Scene1(Game game) {
         this.game = game;
@@ -111,7 +101,7 @@ public class Scene1 extends JPanel {
         // spawnMap.put(110, new SpawnDetails("PowerUp-SpeedUp", BOARD_WIDTH, 300));
         // spawnMap.put(130, new SpawnDetails("PowerUp-Shield", BOARD_WIDTH, 580));
         // spawnMap.put(120, new SpawnDetails("Alien1", BOARD_WIDTH, 100));
-        
+
         // Debug: Print initial spawn map contents
         System.out.println("Initial spawn map loaded with " + spawnMap.size() + " entries:");
         for (Integer frame : spawnMap.keySet()) {
@@ -150,16 +140,10 @@ public class Scene1 extends JPanel {
         powerups = new ArrayList<>();
         explosions = new ArrayList<>();
         obstacles = new ArrayList<>();
+        shots = new ArrayList<>();
 
-        // for (int i = 0; i < 4; i++) {
-        // for (int j = 0; j < 6; j++) {
-        // var enemy = new Enemy(ALIEN_INIT_X + (ALIEN_WIDTH + ALIEN_GAP) * j,
-        // ALIEN_INIT_Y + (ALIEN_HEIGHT + ALIEN_GAP) * i);
-        // enemies.add(enemy);
-        // }
-        // }
         player = new Player();
-        // shot = new Shot();
+
     }
 
     private void drawBackground(Graphics g) {
@@ -180,7 +164,7 @@ public class Scene1 extends JPanel {
         }
     }
 
-    private void drawAliens(Graphics g) {
+    private void drawRobots(Graphics g) {
 
         for (Enemy enemy : enemies) {
 
@@ -193,6 +177,9 @@ public class Scene1 extends JPanel {
 
                 enemy.die();
             }
+            // Debug: Draw enemy bounds
+            g.setColor(Color.RED);
+            g.drawRect(enemy.getX(), enemy.getY(), enemy.getWidth(), enemy.getHeight());
         }
     }
 
@@ -215,16 +202,26 @@ public class Scene1 extends JPanel {
     private void drawPlayer(Graphics g) {
 
         if (player.isVisible()) {
-            
+
             g.drawImage(player.getImage(), player.getX(), player.getY(), player.getWidth(), player.getHeight(), this);
-            
-            // Debug: Draw player bounds
+
+            // // Debug: Draw player bounds, actual hit box defined in rectangle
             g.setColor(Color.BLUE);
-            g.drawRect(player.getX() + 24, player.getY(), player.getWidth() - 30, player.getHeight());
+            g.drawRect(player.getX(), player.getY(), player.getWidth(), player.getHeight());
         }
 
         if (player.isDying()) {
             // Player death handled in checkGameOver()
+        }
+    }
+
+    private void drawShot(Graphics g) {
+
+        for (Shot shot : shots) {
+
+            if (shot.isVisible()) {
+                g.drawImage(shot.getImage(), shot.getX(), shot.getY(), this);
+            }
         }
     }
 
@@ -234,7 +231,7 @@ public class Scene1 extends JPanel {
             Enemy.Bomb b = e.getBomb();
             if (!b.isDestroyed()) {
                 g.drawImage(b.getImage(), b.getX(), b.getY(), this);
-                
+
                 // Debug: Draw bomb bounds
                 g.setColor(Color.ORANGE);
                 g.drawRect(b.getX(), b.getY(), b.getWidth(), b.getHeight());
@@ -267,7 +264,7 @@ public class Scene1 extends JPanel {
         for (Obstacle obstacle : obstacles) {
             if (obstacle.isVisible()) {
                 g.drawImage(obstacle.getImage(), obstacle.getX(), obstacle.getY(), this);
-                
+
                 // Debug: Draw obstacle bounds
                 g.setColor(Color.RED);
                 g.drawRect(obstacle.getX(), obstacle.getY(), obstacle.getWidth(), obstacle.getHeight());
@@ -288,27 +285,26 @@ public class Scene1 extends JPanel {
 
     private void doDrawing(Graphics g) {
 
-        
-
         if (inGame) {
             drawBackground(g);
             drawExplosions(g);
             drawObstacles(g);
             drawPowerUps(g);
-            
-            drawAliens(g);
+            drawShot(g);
+
+            drawRobots(g);
             drawBombing(g); // Draw enemy bombs
             drawPlayer(g);
             drawHPBar(g); // Draw HP bar
-            
+
             if (isPaused) {
                 System.out.println("isPaused is true, calling drawPauseOverlay");
                 drawPauseOverlay(g);
             }
-        } else if (isGameWon){
+        } else if (isGameWon) {
             drawStage1Complete(g);
         }
-        
+
         else {
             drawGameOver(g);
         }
@@ -316,7 +312,7 @@ public class Scene1 extends JPanel {
         // g.setColor(Color.black);
         // g.fillRect(0, 0, d.width, d.height);
 
-        g.setColor(Color.white);
+        g.setColor(Color.BLACK);
         g.drawString("FRAME: " + frame, 10, 10);
         g.setColor(Color.green);
 
@@ -348,59 +344,64 @@ public class Scene1 extends JPanel {
         g.drawString("Press SPACE to continue", BOARD_WIDTH / 2 - 75, BOARD_HEIGHT / 2 + 50);
     }
 
-
-
     private void drawGameOver(Graphics g) {
-        g.setColor(Color.black);
-        g.fillRect(0, 0, BOARD_WIDTH, BOARD_HEIGHT);
+        // g.setColor(Color.black);
+        // g.fillRect(0, 0, BOARD_WIDTH, BOARD_HEIGHT);
 
-        g.setColor(new Color(0, 32, 48));
-        g.fillRect(50, BOARD_HEIGHT / 2 - 30, BOARD_WIDTH - 100, 50);
-        g.setColor(Color.white);
-        g.drawRect(50, BOARD_HEIGHT / 2 - 30, BOARD_WIDTH - 100, 50);
+        // g.setColor(new Color(0, 32, 48));
+        // g.fillRect(50, BOARD_HEIGHT / 2 - 30, BOARD_WIDTH - 100, 50);
+        // g.setColor(Color.white);
+        // g.drawRect(50, BOARD_HEIGHT / 2 - 30, BOARD_WIDTH - 100, 50);
 
-        var large = new Font("Helvetica", Font.BOLD, 36);
-        var fontMetrics = this.getFontMetrics(large);
+        // var large = new Font("Helvetica", Font.BOLD, 36);
+        // var fontMetrics = this.getFontMetrics(large);
 
-        g.setColor(Color.white);
-        g.setFont(large);
-        g.drawString(gameOverMessage, (BOARD_WIDTH - fontMetrics.stringWidth(gameOverMessage)) / 2,
-                BOARD_HEIGHT / 2);
+        // g.setColor(Color.white);
+        // g.setFont(large);
+        // g.drawString(gameOverMessage, (BOARD_WIDTH -
+        // fontMetrics.stringWidth(gameOverMessage)) / 2,
+        // BOARD_HEIGHT / 2);
 
-        // Draw instructions
-        g.setFont(new Font("Helvetica", Font.PLAIN, 12));
-        g.drawString("Press SPACE to restart", BOARD_WIDTH / 2 - 60, BOARD_HEIGHT / 2 + 30);
-        g.drawString("Press ESC to quit", BOARD_WIDTH / 2 - 50, BOARD_HEIGHT / 2 + 50);
+        // // Draw instructions
+        // g.setFont(new Font("Helvetica", Font.PLAIN, 12));
+        // g.drawString("Press SPACE to restart", BOARD_WIDTH / 2 - 60, BOARD_HEIGHT / 2
+        // + 30);
+        // g.drawString("Press ESC to quit", BOARD_WIDTH / 2 - 50, BOARD_HEIGHT / 2 +
+        // 50);
+        ImageIcon gameOverOverlay = new ImageIcon(IMG_GAME_OVER);
+        g.drawImage(gameOverOverlay.getImage(), 0, 0, BOARD_WIDTH, BOARD_HEIGHT, this);
     }
 
     private void drawPauseOverlay(Graphics g) {
         System.out.println("Drawing pause overlay");
-        
-        // Semi-transparent overlay
-        g.setColor(new Color(0, 0, 0, 128));
-        g.fillRect(0, 0, BOARD_WIDTH, BOARD_HEIGHT);
 
-        // Pause box
-        g.setColor(new Color(0, 32, 48));
-        g.fillRect(50, BOARD_HEIGHT / 2 - 60, BOARD_WIDTH - 100, 120);
-        g.setColor(Color.white);
-        g.drawRect(50, BOARD_HEIGHT / 2 - 60, BOARD_WIDTH - 100, 120);
-        g.drawImage(new ImageIcon(IMG_PAUSE).getImage(), 50, BOARD_HEIGHT / 2 - 200, this);
-        
+        // // Semi-transparent overlay
+        // g.setColor(new Color(0, 0, 0, 128));
+        // g.fillRect(0, 0, BOARD_WIDTH, BOARD_HEIGHT);
 
-        // Pause text
-        var large = new Font("Helvetica", Font.BOLD, 36);
-        var fontMetrics = this.getFontMetrics(large);
-        g.setColor(Color.white);
-        g.setFont(large);
-        String pauseText = "PAUSED";
-        g.drawString(pauseText, (BOARD_WIDTH - fontMetrics.stringWidth(pauseText)) / 2,
-                BOARD_HEIGHT / 2 - 20);
+        // // Pause box
+        // g.setColor(new Color(0, 32, 48));
+        // g.fillRect(50, BOARD_HEIGHT / 2 - 60, BOARD_WIDTH - 100, 120);
+        // g.setColor(Color.white);
+        // g.drawRect(50, BOARD_HEIGHT / 2 - 60, BOARD_WIDTH - 100, 120);
+        g.drawImage(new ImageIcon(IMG_PAUSE).getImage(), 0, 0, BOARD_WIDTH, BOARD_HEIGHT, this);
 
-        // Instructions
-        g.setFont(new Font("Helvetica", Font.PLAIN, 14));
-        g.drawString("Press P to resume", BOARD_WIDTH / 2 - 60, BOARD_HEIGHT / 2 + 20);
-        g.drawString("Press ESC to quit", BOARD_WIDTH / 2 - 55, BOARD_HEIGHT / 2 + 40);
+        // // Pause text
+        // var large = new Font("Helvetica", Font.BOLD, 36);
+        // var fontMetrics = this.getFontMetrics(large);
+        // g.setColor(Color.white);
+        // g.setFont(large);
+        // String pauseText = "PAUSED";
+        // g.drawString(pauseText, (BOARD_WIDTH - fontMetrics.stringWidth(pauseText)) /
+        // 2,
+        // BOARD_HEIGHT / 2 - 20);
+
+        // // Instructions
+        // g.setFont(new Font("Helvetica", Font.PLAIN, 14));
+        // g.drawString("Press P to resume", BOARD_WIDTH / 2 - 60, BOARD_HEIGHT / 2 +
+        // 20);
+        // g.drawString("Press ESC to quit", BOARD_WIDTH / 2 - 55, BOARD_HEIGHT / 2 +
+        // 40);
     }
 
     private void drawHPBar(Graphics g) {
@@ -409,23 +410,23 @@ public class Scene1 extends JPanel {
         int barHeight = 20;
         int barX = BOARD_WIDTH - barWidth - 20; // 20 pixels from right edge
         int barY = 20; // 20 pixels from top
-        
+
         // Get player HP
         int currentHP = player.getCurrentHP();
         int maxHP = player.getMaxHP();
-        
+
         // Calculate HP percentage
         double hpPercentage = (double) currentHP / maxHP;
         int fillWidth = (int) (barWidth * hpPercentage);
-        
+
         // Draw HP bar background (dark gray)
         g.setColor(new Color(50, 50, 50));
         g.fillRect(barX, barY, barWidth, barHeight);
-        
+
         // Draw HP bar border
         g.setColor(Color.WHITE);
         g.drawRect(barX, barY, barWidth, barHeight);
-        
+
         // Draw HP fill based on percentage
         if (hpPercentage > 0.6) {
             g.setColor(Color.GREEN); // High HP - Green
@@ -434,11 +435,11 @@ public class Scene1 extends JPanel {
         } else {
             g.setColor(Color.RED); // Low HP - Red
         }
-        
+
         if (fillWidth > 0) {
             g.fillRect(barX + 1, barY + 1, fillWidth - 2, barHeight - 2);
         }
-        
+
         // Draw HP text
         g.setColor(Color.WHITE);
         g.setFont(new Font("Arial", Font.BOLD, 12));
@@ -446,33 +447,33 @@ public class Scene1 extends JPanel {
         FontMetrics fm = g.getFontMetrics();
         int textWidth = fm.stringWidth(hpText);
         g.drawString(hpText, barX + (barWidth - textWidth) / 2, barY + barHeight + 15);
-        
+
         // Draw invulnerability indicator
         if (player.isInvulnerable()) {
             g.setColor(Color.CYAN);
             g.setFont(new Font("Arial", Font.BOLD, 10));
             g.drawString("INVULNERABLE", barX, barY - 5);
         }
-        
+
         // Draw shield indicator
         if (player.isShieldActive()) {
             g.setColor(Color.BLUE);
             g.setFont(new Font("Arial", Font.BOLD, 12));
             String shieldText = "SHIELD: " + (player.getShieldTimer() / 60.0f) + "s";
             g.drawString(shieldText, barX, barY - 20);
-            
+
             // Draw shield border around HP bar
             g.setColor(Color.BLUE);
             g.drawRect(barX - 2, barY - 2, barWidth + 4, barHeight + 4);
         }
-        
+
         // Debug: Draw player position info
         g.setColor(Color.YELLOW);
         g.setFont(new Font("Arial", Font.PLAIN, 10));
-        String posText = "Player: (" + player.getX() + "," + player.getY() + ") " + 
-                        player.getWidth() + "x" + player.getHeight();
+        String posText = "Player: (" + player.getX() + "," + player.getY() + ") " +
+                player.getWidth() + "x" + player.getHeight();
         g.drawString(posText, 10, 30);
-        
+
         // Draw stage timer countdown
         g.setColor(Color.WHITE);
         g.setFont(new Font("Arial", Font.BOLD, 14));
@@ -483,62 +484,55 @@ public class Scene1 extends JPanel {
     }
 
     private void handleDynamicSpawning() {
-        // Increment spawn counters
-        tumbleweedSpawnCounter++;
-        cactusSpawnCounter++;
-        alienSpawnCounter++;
- 
+
         // Spawn Tumbleweed based on interval
-        if (tumbleweedSpawnCounter >= TUMBLEWEED_SPAWN_INTERVAL) {
+        if (tumbleweedSpawnCounter >= SpawnDetails.getShortSpawnTime()) {
             SpawnDetails tumbleweedSpawn = new SpawnDetails("Tumbleweed", BOARD_WIDTH, GROUND);
             spawnEntity(tumbleweedSpawn);
             tumbleweedSpawnCounter = 0; // Reset counter
             System.out.println("Dynamic spawn: Tumbleweed at frame " + frame);
         }
-        
+
         // Spawn Cactus based on interval
-        if (cactusSpawnCounter >= CACTUS_SPAWN_INTERVAL) {
+        if (cactusSpawnCounter >= SpawnDetails.getLongSpawnTime()) {
             SpawnDetails cactusSpawn = new SpawnDetails("Cactus", BOARD_WIDTH, GROUND);
             spawnEntity(cactusSpawn);
             cactusSpawnCounter = 0; // Reset counter
             System.out.println("Dynamic spawn: Cactus at frame " + frame);
         }
-        
-        // Spawn Alien based on interval
-        if (alienSpawnCounter >= ALIEN_SPAWN_INTERVAL) {
-            // Randomize alien Y position between 20 and ground level
-            int minY = 20;
-            int maxY = GROUND - ALIEN_HEIGHT; // Ensure alien doesn't spawn below ground
-            int randomY = minY + randomizer.nextInt(maxY - minY + 1);
-            SpawnDetails alienSpawn = new SpawnDetails("Alien1", BOARD_WIDTH, randomY);
-            spawnEntity(alienSpawn);
-            alienSpawnCounter = 0; // Reset counter
-            System.out.println("Dynamic spawn: Alien1 at frame " + frame + " Y=" + randomY);
+
+        // Spawn Robot based on interval
+        if (robotSpawnCounter >= SpawnDetails.getShortSpawnTime()) {
+
+            SpawnDetails robotSpawn = new SpawnDetails("Robot", BOARD_WIDTH, SpawnDetails.getSpawnY());
+            spawnEntity(robotSpawn);
+            robotSpawnCounter = 0; // Reset counter
+            System.out.println("Dynamic spawn: Robot at frame " + frame + " Y=" + SpawnDetails.getSpawnY());
         }
 
         // Collectibles
         speedupCounter++;
         shieldCounter++;
         // Spawn SpeedUp power-up every 5 seconds (300 frames)
-        if (speedupCounter >= SPEEDUP_SPAWN_INTERVAL) {
-            SpawnDetails speedupSpawn = new SpawnDetails("PowerUp-SpeedUp", BOARD_WIDTH, 400);
+        if (speedupCounter >= SpawnDetails.getLongSpawnTime()) {
+            SpawnDetails speedupSpawn = new SpawnDetails("PowerUp-SpeedUp", BOARD_WIDTH, SpawnDetails.getSpawnY());
             spawnEntity(speedupSpawn);
             speedupCounter = 0; // Reset counter
-            System.out.println("Dynamic spawn: PowerUp-SpeedUp at frame " + frame);    
-        } 
+            System.out.println("Dynamic spawn: PowerUp-SpeedUp at frame " + frame);
+        }
 
-        if (shieldCounter >= SHIELD_SPAWN_INTERVAL) { // Spawn Shield every 6 seconds (360 frames)
-            SpawnDetails shieldSpawn = new SpawnDetails("PowerUp-Shield", BOARD_WIDTH, 580);
+        if (shieldCounter >= SpawnDetails.getLongSpawnTime()) {
+            SpawnDetails shieldSpawn = new SpawnDetails("PowerUp-Shield", BOARD_WIDTH, SpawnDetails.getSpawnY());
             spawnEntity(shieldSpawn);
             shieldCounter = 0; // Reset counter
             System.out.println("Dynamic spawn: PowerUp-Shield at frame " + frame);
-        }       
+        }
     }
-    
+
     private void spawnEntity(SpawnDetails sd) {
         switch (sd.type) {
-            case "Alien1":
-                Enemy enemy = new Alien1(sd.x, sd.y);
+            case "Robot":
+                Enemy enemy = new Robot(sd.x, sd.y);
                 enemies.add(enemy);
                 break;
             case "PowerUp-SpeedUp":
@@ -554,7 +548,7 @@ public class Scene1 extends JPanel {
                 obstacles.add(tumbleweed);
                 break;
             case "Cactus":
-                Obstacle cactus = new Cactus(sd.x, sd.y - 100);
+                Obstacle cactus = new Cactus(sd.x, sd.y - 200);
                 obstacles.add(cactus);
                 break;
             default:
@@ -573,20 +567,78 @@ public class Scene1 extends JPanel {
             return; // Don't update if game is over or paused
         }
 
+        tumbleweedSpawnCounter++;
+        cactusSpawnCounter++;
+        robotSpawnCounter++;
+
         // Handle dynamic spawning based on counters
         handleDynamicSpawning();
 
         // Check fixed enemy spawn (for initial spawns only)
-        SpawnDetails sd = spawnMap.get(frame);
-        if (sd != null) {
-            System.out.println("Spawning at frame " + frame + ": " + sd.type + " at (" + sd.x + ", " + sd.y + ")");
-            spawnEntity(sd);
-        }
+        // SpawnDetails sd = spawnMap.get(frame);
+        // if (sd != null) {
+        // System.out.println("Spawning at frame " + frame + ": " + sd.type + " at (" +
+        // sd.x + ", " + sd.y + ")");
+        // spawnEntity(sd);
+        // }
 
         checkGameOver();
 
         // player
         player.act();
+
+        if (player.isFiring() && player.canFire()) {
+            // Create a new shot and add it to the list
+            Shot shot = new Shot(player.getX(), player.getY() + 64);
+            shots.add(shot);
+            player.setShotCooldown();
+        }
+
+        // Shots
+        List<Shot> shotsToRemove = new ArrayList<>();
+        List<Enemy> enemiesToRemove = new ArrayList<>();
+        for (Shot shot : shots) {
+
+            int shotX = shot.getX();
+            int shotY = shot.getY();
+
+            if (shot.isVisible()) {
+
+                for (Enemy enemy : enemies) {
+
+                    if (enemy.isVisible() && shot.isVisible() && enemy.collidesWith(shot)) {
+
+                        var ii = new Explosion(enemy.getX(), enemy.getY());
+                        enemy.setImage(ii.getImage());
+                        enemy.setDying(true);
+                        explosions.add(ii);
+                        shot.die();
+                        shotsToRemove.add(shot);
+                        enemiesToRemove.add(enemy);
+                        deaths++;
+
+                    }
+                }
+
+                shotX += 10;
+
+                if (shotX > BOARD_WIDTH || shotY < 0) {
+                    shot.die();
+                    shotsToRemove.add(shot);
+                } else {
+                    shot.setX(shotX);
+                }
+            }
+        }
+        shots.removeAll(shotsToRemove);
+        enemies.removeAll(enemiesToRemove);
+
+        // Create rectangles for player and obstacle
+        Rectangle playerRect = new Rectangle(
+                player.getX(),
+                player.getY(),
+                player.getWidth(),
+                player.getHeight());
 
         // Power-ups
         for (PowerUp powerup : powerups) {
@@ -609,24 +661,16 @@ public class Scene1 extends JPanel {
         for (Obstacle obstacle : obstacles) {
             if (obstacle.isVisible()) {
                 obstacle.act();
-                
+
                 // Check collision with player using Rectangle collision detection
                 if (player.isVisible() && !player.isInvulnerable()) {
-                    // Create rectangles for player and obstacle
-                    Rectangle playerRect = new Rectangle(
-                        player.getX(), 
-                        player.getY(), 
-                        player.getWidth(), 
-                        player.getHeight()
-                    );
-                    
+
                     Rectangle obstacleRect = new Rectangle(
-                        obstacle.getX(), 
-                        obstacle.getY(), 
-                        obstacle.getWidth(), 
-                        obstacle.getHeight()
-                    );
-                    
+                            obstacle.getX(),
+                            obstacle.getY(),
+                            obstacle.getWidth(),
+                            obstacle.getHeight());
+
                     // Check if rectangles intersect
                     if (playerRect.intersects(obstacleRect)) {
                         // Player collided with obstacle
@@ -635,10 +679,12 @@ public class Scene1 extends JPanel {
                             damage = 1; // Tumbleweed does 1 damage
                         } else if (obstacle instanceof Cactus) {
                             damage = 2; // Cactus does 2 damage
+
                         }
-                        
+
                         player.takeDamage(damage);
-                        System.out.println("Player hit " + obstacle.getClass().getSimpleName() + " for " + damage + " damage!");
+                        System.out.println(
+                                "Player hit " + obstacle.getClass().getSimpleName() + " for " + damage + " damage!");
                         System.out.println("Player Rect: " + playerRect);
                         System.out.println("Obstacle Rect: " + obstacleRect);
                     }
@@ -646,28 +692,28 @@ public class Scene1 extends JPanel {
             }
         }
 
-        // enemies
-        for (Enemy enemy : enemies) {
-            int x = enemy.getX();
-            if (x >= BOARD_WIDTH - BORDER_RIGHT && direction != -1) {
-                direction = -1;
-                for (Enemy e2 : enemies) {
-                    e2.setY(e2.getY() + GO_DOWN);
-                }
-            }
-            if (x <= BORDER_LEFT && direction != 1) {
-                direction = 1;
-                for (Enemy e : enemies) {
-                    e.setY(e.getY() + GO_DOWN);
-                }
-            }
-        }
-        for (Enemy enemy : enemies) {
-            if (enemy.isVisible()) {
-                // Enemy invasion check moved to checkGameOver()
-                enemy.act(direction);
-            }
-        }
+        // // enemies
+        // for (Enemy enemy : enemies) {
+        // int x = enemy.getX();
+        // if (x >= BOARD_WIDTH - BORDER_RIGHT && direction != -1) {
+        // direction = -1;
+        // for (Enemy e2 : enemies) {
+        // e2.setY(e2.getY() + GO_DOWN);
+        // }
+        // }
+        // if (x <= BORDER_LEFT && direction != 1) {
+        // direction = 1;
+        // for (Enemy e : enemies) {
+        // e.setY(e.getY() + GO_DOWN);
+        // }
+        // }
+        // }
+        // for (Enemy enemy : enemies) {
+        // if (enemy.isVisible()) {
+        // // Enemy invasion check moved to checkGameOver()
+        // enemy.act(direction);
+        // }
+        // }
         // bombs - collision detection
         // Bomb is with enemy, so it loops over enemies
         for (Enemy enemy : enemies) {
@@ -684,21 +730,14 @@ public class Scene1 extends JPanel {
 
             // Use Rectangle collision detection for bombs
             if (player.isVisible() && !bomb.isDestroyed()) {
-                // Create rectangles for player and bomb
-                Rectangle playerRect = new Rectangle(
-                    player.getX(), 
-                    player.getY(), 
-                    player.getWidth(), 
-                    player.getHeight()
-                );
-                
+                // Create rectangles for bombs
+
                 Rectangle bombRect = new Rectangle(
-                    bomb.getX(), 
-                    bomb.getY(), 
-                    bomb.getWidth(), 
-                    bomb.getHeight()
-                );
-                
+                        bomb.getX(),
+                        bomb.getY(),
+                        bomb.getWidth(),
+                        bomb.getHeight());
+
                 // Check if rectangles intersect
                 if (playerRect.intersects(bombRect)) {
                     // Instead of instant game over, damage the player
@@ -779,6 +818,9 @@ public class Scene1 extends JPanel {
             if (key == KeyEvent.VK_P) {
                 togglePause();
                 return;
+            } else if (key == KeyEvent.VK_SPACE && isPaused) {
+                togglePause();
+                return;
             }
 
             // Don't process other keys when paused
@@ -792,7 +834,7 @@ public class Scene1 extends JPanel {
 
     private void transitionToCutscene() {
         System.out.println("Transitioning to cutscene...");
-        
+
         // Switch to cutscene in the main game window
         if (game != null) {
             game.loadCutscene();
@@ -801,11 +843,12 @@ public class Scene1 extends JPanel {
 
     private void checkStage1Complete() {
         // Check if player has completed Stage 1
-        if (frame >= 3000) {  //TODO: change Stage 1 complete logic
+        // if (deaths == NUMBER_OF_ROBOTS_TO_DESTROY) {
+        if (frame >= 30) { // debug condition for stage completion
             isGameWon = true;
             inGame = false;
             gameOverMessage = "Stage 1 Complete!";
-            
+
             // Stop the timer
             if (timer != null && timer.isRunning()) {
                 timer.stop();
@@ -833,42 +876,46 @@ public class Scene1 extends JPanel {
         }
 
         // Check victory condition
-        if (deaths == NUMBER_OF_ALIENS_TO_DESTROY) {
+        if (deaths == NUMBER_OF_ROBOTS_TO_DESTROY) {
             triggerGameOver("Game Won!");
             return;
         }
 
         // Check enemy invasion (enemies reach the ground)
         // for (Enemy enemy : enemies) {
-        //     if (enemy.isVisible()) {
-        //         int y = enemy.getY();
-        //         if (y > GROUND - ALIEN_HEIGHT) {
-        //             triggerGameOver("Invasion!");
-        //             return;
-        //         }
-        //     }
+        // if (enemy.isVisible()) {
+        // int y = enemy.getY();
+        // if (y > GROUND - ALIEN_HEIGHT) {
+        // triggerGameOver("Invasion!");
+        // return;
+        // }
+        // }
         // }
 
         // Check enemy-player collision (direct contact = game over)
         for (Enemy enemy : enemies) {
             if (enemy.isVisible() && player.isVisible()) {
-                int enemyX = enemy.getX();
-                int enemyY = enemy.getY();
-                int playerX = player.getX();
-                int playerY = player.getY();
+                // int enemyX = enemy.getX();
+                // int enemyY = enemy.getY();
+                // int playerX = player.getX();
+                // int playerY = player.getY();
 
                 // Check if enemy and player are colliding
-                if (enemyX < playerX + PLAYER_WIDTH &&
-                        enemyX + ALIEN_WIDTH > playerX &&
-                        enemyY < playerY + PLAYER_HEIGHT &&
-                        enemyY + ALIEN_HEIGHT > playerY) {
+                // if (enemyX < playerX + PLAYER_WIDTH &&
+                // enemyX + ALIEN_WIDTH > playerX &&
+                // enemyY < playerY + PLAYER_HEIGHT &&
+                // enemyY + ALIEN_HEIGHT > playerY) {
 
-                    // Enemy touched player directly - Game Over
-                    var ii = new ImageIcon(IMG_EXPLOSION);
-                    player.setImage(ii.getImage());
-                    player.setDying(true);
-                    triggerGameOver("Game Over");
-                    return;
+                if (enemy.isVisible()) {
+                    if (enemy.collidesWith(player)) {
+                        // Enemy touched player directly - Game Over
+                        var ii = new Explosion(player.getX(), player.getY());
+                        player.setImage(ii.getImage());
+                        player.setDying(true);
+                        triggerGameOver("Game Over");
+                        return;
+                    }
+
                 }
             }
         }
@@ -904,11 +951,11 @@ public class Scene1 extends JPanel {
         frame = 0;
         deaths = 0;
         direction = -1;
-        
+
         // Reset spawn counters
         tumbleweedSpawnCounter = 0;
         cactusSpawnCounter = 0;
-        alienSpawnCounter = 0;
+        robotSpawnCounter = 0;
         speedupCounter = 0;
         shieldCounter = 0;
 
@@ -924,10 +971,10 @@ public class Scene1 extends JPanel {
 
         // Reinitialize game
         gameInit();
-        
+
         // Reset player HP
         player.resetHP();
-        
+
         initAudio();
 
         // Restart timer
@@ -939,7 +986,7 @@ public class Scene1 extends JPanel {
     private void togglePause() {
         isPaused = !isPaused;
         System.out.println("Pause toggled: isPaused = " + isPaused);
-        
+
         if (isPaused) {
             // Don't stop the timer - let it continue for repainting
             // Just pause audio
@@ -960,7 +1007,7 @@ public class Scene1 extends JPanel {
                 System.err.println("Error resuming audio: " + e.getMessage());
             }
         }
-        
+
         // Force a repaint to show the pause overlay immediately
         repaint();
     }

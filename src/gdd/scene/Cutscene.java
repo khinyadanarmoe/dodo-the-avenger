@@ -92,7 +92,7 @@ public class Cutscene extends JPanel {
 
     private void drawCutscene(Graphics g) {
         // Draw cutscene background
-        ImageIcon cutsceneImage = new ImageIcon("src/images/cutscene.png");
+        ImageIcon cutsceneImage = new ImageIcon("src/dodoSprites/cutscene.png");
         g.drawImage(cutsceneImage.getImage(), 0, 0, BOARD_WIDTH, BOARD_HEIGHT, this);
 
         // Draw dialogue box
