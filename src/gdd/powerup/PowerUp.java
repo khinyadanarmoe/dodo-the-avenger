@@ -5,6 +5,8 @@
 
 package gdd.powerup;
 
+import static gdd.Global.globalSpeed;
+
 import gdd.sprite.Player;
 import gdd.sprite.Sprite;
 
@@ -19,7 +21,7 @@ abstract public class PowerUp extends Sprite {
     @Override
     public void act() {
         // Default behavior for side-scrolling - move left
-        this.x -= 2;
+        this.x -= globalSpeed; // Move left by global speed
     }
 
     abstract public void upgrade(Player player);

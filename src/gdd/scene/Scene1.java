@@ -20,16 +20,21 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Random;
+
+import javax.sound.sampled.LineUnavailableException;
+import javax.sound.sampled.UnsupportedAudioFileException;
 import javax.swing.ImageIcon;
 import javax.swing.JPanel;
 import javax.swing.Timer;
@@ -40,6 +45,9 @@ public class Scene1 extends JPanel {
     // state overlay
     private boolean isPaused = false;
     private boolean isGameWon = false;
+
+    private long lastUpdateTime = System.nanoTime();
+    private double scrollPosition = 0;
 
     private int frame = 0;
     private List<PowerUp> powerups;
@@ -58,6 +66,8 @@ public class Scene1 extends JPanel {
 
     private int direction = -1;
     private int deaths = 0;
+    private static final int defaultScrollSpeed = GLOBAL_SPEED * 50; // You can dynamically adjust globalSpeed
+    private int scrollSpeed = defaultScrollSpeed; // Initial scroll speed
 
     private boolean inGame = true;
     private String gameOverMessage = "Game Over";
@@ -66,6 +76,7 @@ public class Scene1 extends JPanel {
 
     private Timer timer;
     private final Game game;
+    private long lastDamageSoundTime = 0;
 
     private HashMap<Integer, SpawnDetails> spawnMap = new HashMap<>();
     private AudioPlayer audioPlayer;
@@ -77,6 +88,8 @@ public class Scene1 extends JPanel {
     private int speedupCounter = 0;
     private int shieldCounter = 0;
 
+    private static AudioPlayer damageSound;
+
     public Scene1(Game game) {
         this.game = game;
         // initBoard();
@@ -87,11 +100,12 @@ public class Scene1 extends JPanel {
     private void initAudio() {
         try {
             String filePath = "src/audio/scene1.wav";
-            audioPlayer = new AudioPlayer(filePath);
+            audioPlayer = new AudioPlayer(filePath, true); // Looping audio
             audioPlayer.play();
         } catch (Exception e) {
             System.err.println("Error initializing audio player: " + e.getMessage());
         }
+
     }
 
     private void loadSpawnDetails() {
@@ -144,16 +158,38 @@ public class Scene1 extends JPanel {
 
         player = new Player();
 
+        if (damageSound == null) {
+            try {
+                damageSound = new AudioPlayer("src/audio/damaged.wav");
+            } catch (Exception e) {
+                System.err.println("Error loading damage sound: " + e.getMessage());
+            }
+        }
+
     }
 
+    // private void drawBackground(Graphics g) {
+    // ImageIcon ii = new ImageIcon(IMG_BACKGROUND);
+    // int bgWidth = BOARD_WIDTH;
+    // int bgHeight = BOARD_HEIGHT;
+
+    // // Increase this for faster scrolling
+    // int scrollOffset = (frame * scrollSpeed) % bgWidth;
+
+    // int x1 = -scrollOffset;
+    // int x2 = x1 + bgWidth;
+
+    // if (inGame) {
+    // g.drawImage(ii.getImage(), x1, 0, bgWidth, bgHeight, this);
+    // g.drawImage(ii.getImage(), x2, 0, bgWidth, bgHeight, this);
+    // }
+    // }
     private void drawBackground(Graphics g) {
         ImageIcon ii = new ImageIcon(IMG_BACKGROUND);
-        int bgWidth = BOARD_WIDTH; // scale width to fit board
-        int bgHeight = BOARD_HEIGHT; // scale height to fit board
+        int bgWidth = BOARD_WIDTH;
+        int bgHeight = BOARD_HEIGHT;
 
-        // Dynamic scroll speed
-        int scrollSpeed = 2;
-        int scrollOffset = (frame * scrollSpeed) % bgWidth;
+        int scrollOffset = (int) (scrollPosition % bgWidth); // smoother now
 
         int x1 = -scrollOffset;
         int x2 = x1 + bgWidth;
@@ -177,9 +213,9 @@ public class Scene1 extends JPanel {
 
                 enemy.die();
             }
-            // Debug: Draw enemy bounds
-            g.setColor(Color.RED);
-            g.drawRect(enemy.getX(), enemy.getY(), enemy.getWidth(), enemy.getHeight());
+            // // Debug: Draw enemy bounds
+            // g.setColor(Color.RED);
+            // g.drawRect(enemy.getX(), enemy.getY(), enemy.getWidth(), enemy.getHeight());
         }
     }
 
@@ -202,12 +238,32 @@ public class Scene1 extends JPanel {
     private void drawPlayer(Graphics g) {
 
         if (player.isVisible()) {
+            int x = player.getX();
+            int y = player.getY();
+            int w = player.getWidth();
+            int h = player.getHeight();
 
-            g.drawImage(player.getImage(), player.getX(), player.getY(), player.getWidth(), player.getHeight(), this);
+            g.drawImage(player.getImage(), x, y, w, h, this);
 
-            // // Debug: Draw player bounds, actual hit box defined in rectangle
-            g.setColor(Color.BLUE);
-            g.drawRect(player.getX(), player.getY(), player.getWidth(), player.getHeight());
+            // Draw player image with red tint if invulnerable (recently took damage)
+            if (player.isInvulnerable()) {
+                Graphics2D g2d = (Graphics2D) g.create();
+                g2d.translate(x, y);
+                g2d.setComposite(java.awt.AlphaComposite.SrcAtop.derive(1.0f));
+                // Apply red tint using a ColorConvertOp or RescaleOp
+                java.awt.image.RescaleOp redTint = new java.awt.image.RescaleOp(
+                        new float[] { 1.0f, 0.3f, 0.3f, 1.0f }, // R, G, B, A scale
+                        new float[] { 0f, 0f, 0f, 0f }, // offsets
+                        null);
+                g2d.drawImage(redTint.filter(
+                        ((java.awt.image.BufferedImage) player.getImage()), null),
+                        0, 0, w, h, null);
+                g2d.dispose();
+            }
+
+            // // Debug: Draw player bounds
+            // g.setColor(Color.BLUE);
+            // g.drawRect(x, y, w, h);
         }
 
         if (player.isDying()) {
@@ -232,9 +288,9 @@ public class Scene1 extends JPanel {
             if (!b.isDestroyed()) {
                 g.drawImage(b.getImage(), b.getX(), b.getY(), this);
 
-                // Debug: Draw bomb bounds
-                g.setColor(Color.ORANGE);
-                g.drawRect(b.getX(), b.getY(), b.getWidth(), b.getHeight());
+                // // Debug: Draw bomb bounds
+                // g.setColor(Color.ORANGE);
+                // g.drawRect(b.getX(), b.getY(), b.getWidth(), b.getHeight());
             }
         }
     }
@@ -265,9 +321,10 @@ public class Scene1 extends JPanel {
             if (obstacle.isVisible()) {
                 g.drawImage(obstacle.getImage(), obstacle.getX(), obstacle.getY(), this);
 
-                // Debug: Draw obstacle bounds
-                g.setColor(Color.RED);
-                g.drawRect(obstacle.getX(), obstacle.getY(), obstacle.getWidth(), obstacle.getHeight());
+                // // Debug: Draw obstacle bounds
+                // g.setColor(Color.RED);
+                // g.drawRect(obstacle.getX(), obstacle.getY(), obstacle.getWidth(),
+                // obstacle.getHeight());
             }
 
             if (obstacle.isDying()) {
@@ -286,6 +343,12 @@ public class Scene1 extends JPanel {
     private void doDrawing(Graphics g) {
 
         if (inGame) {
+            long currentTime = System.nanoTime();
+            double deltaTime = (currentTime - lastUpdateTime) / 1_000_000_000.0; // seconds
+
+            scrollPosition += scrollSpeed * deltaTime; // pixels = speed * time
+
+            lastUpdateTime = currentTime;
             drawBackground(g);
             drawExplosions(g);
             drawObstacles(g);
@@ -557,7 +620,7 @@ public class Scene1 extends JPanel {
         }
     }
 
-    private void update() {
+    private void update() throws UnsupportedAudioFileException, IOException, LineUnavailableException {
 
         // Check game over conditions first
         checkGameOver();
@@ -567,6 +630,9 @@ public class Scene1 extends JPanel {
             return; // Don't update if game is over or paused
         }
 
+        if (scrollSpeed < globalSpeed * 50) {
+            scrollSpeed += 10; // Ensure scroll speed is at least global speed
+        }
         tumbleweedSpawnCounter++;
         cactusSpawnCounter++;
         robotSpawnCounter++;
@@ -582,8 +648,6 @@ public class Scene1 extends JPanel {
         // spawnEntity(sd);
         // }
 
-        checkGameOver();
-
         // player
         player.act();
 
@@ -591,6 +655,13 @@ public class Scene1 extends JPanel {
             // Create a new shot and add it to the list
             Shot shot = new Shot(player.getX(), player.getY() + 64);
             shots.add(shot);
+            // After creating and adding the shot
+            try {
+                AudioPlayer shotSound = new AudioPlayer("src/audio/robotshot.wav");
+                shotSound.play();
+            } catch (Exception e) {
+                System.err.println("Shot sound error: " + e.getMessage());
+            }
             player.setShotCooldown();
         }
 
@@ -599,8 +670,8 @@ public class Scene1 extends JPanel {
         List<Enemy> enemiesToRemove = new ArrayList<>();
         for (Shot shot : shots) {
 
-            int shotX = shot.getX();
-            int shotY = shot.getY();
+            // int shotX = shot.getX();
+            // int shotY = shot.getY();
 
             if (shot.isVisible()) {
 
@@ -620,25 +691,25 @@ public class Scene1 extends JPanel {
                     }
                 }
 
-                shotX += 10;
+                shot.act(); // Update shot position
 
-                if (shotX > BOARD_WIDTH || shotY < 0) {
-                    shot.die();
-                    shotsToRemove.add(shot);
-                } else {
-                    shot.setX(shotX);
-                }
+                // if (shotX > BOARD_WIDTH || shotY < 0) {
+                // shot.die();
+                // shotsToRemove.add(shot);
+                // } else {
+                // shot.setX(shotX);
+                // }
             }
         }
         shots.removeAll(shotsToRemove);
         enemies.removeAll(enemiesToRemove);
 
-        // Create rectangles for player and obstacle
-        Rectangle playerRect = new Rectangle(
-                player.getX(),
-                player.getY(),
-                player.getWidth(),
-                player.getHeight());
+        // // Create rectangles for player and obstacle
+        // Rectangle playerRect = new Rectangle(
+        // player.getX(),
+        // player.getY(),
+        // player.getWidth(),
+        // player.getHeight());
 
         // Power-ups
         for (PowerUp powerup : powerups) {
@@ -646,6 +717,13 @@ public class Scene1 extends JPanel {
                 powerup.act();
                 if (powerup.collidesWith(player)) {
                     powerup.upgrade(player);
+                    try {
+                        AudioPlayer powerupSound = new AudioPlayer(
+                                "src/audio/mixkit-winning-a-coin-video-game-2069.wav");
+                        powerupSound.play();
+                    } catch (Exception e) {
+                        System.err.println("Power-up sound error: " + e.getMessage());
+                    }
                 }
             }
         }
@@ -665,28 +743,43 @@ public class Scene1 extends JPanel {
                 // Check collision with player using Rectangle collision detection
                 if (player.isVisible() && !player.isInvulnerable()) {
 
-                    Rectangle obstacleRect = new Rectangle(
-                            obstacle.getX(),
-                            obstacle.getY(),
-                            obstacle.getWidth(),
-                            obstacle.getHeight());
+                    // Rectangle obstacleRect = new Rectangle(
+                    // obstacle.getX(),
+                    // obstacle.getY(),
+                    // obstacle.getWidth(),
+                    // obstacle.getHeight());
 
-                    // Check if rectangles intersect
-                    if (playerRect.intersects(obstacleRect)) {
-                        // Player collided with obstacle
+                    // // Check if rectangles intersect
+                    // if (playerRect.intersects(obstacleRect)) {
+                    // // Player collided with obstacle
+                    // int damage = 1; // Default damage
+                    // if (obstacle instanceof Tumbleweed) {
+                    // damage = 1; // Tumbleweed does 1 damage
+                    // } else if (obstacle instanceof Cactus) {
+                    // damage = 2; // Cactus does 2 damage
+
+                    // }
+                    if (obstacle.collidesWith(player)) {
                         int damage = 1; // Default damage
                         if (obstacle instanceof Tumbleweed) {
                             damage = 1; // Tumbleweed does 1 damage
                         } else if (obstacle instanceof Cactus) {
                             damage = 2; // Cactus does 2 damage
-
                         }
 
                         player.takeDamage(damage);
+                        // play taking damage sound
+                        long now = System.currentTimeMillis();
+                        if (damageSound != null  && now - lastDamageSoundTime > 500) { // 500ms cooldown
+                            damageSound.stop(); // Stop if already playing, for rapid hits
+                            damageSound.play();
+                            lastDamageSoundTime = now;
+                        }
+
                         System.out.println(
                                 "Player hit " + obstacle.getClass().getSimpleName() + " for " + damage + " damage!");
-                        System.out.println("Player Rect: " + playerRect);
-                        System.out.println("Obstacle Rect: " + obstacleRect);
+                        // System.out.println("Player Rect: " + playerRect);
+                        // System.out.println("Obstacle Rect: " + obstacleRect);
                     }
                 }
             }
@@ -732,20 +825,37 @@ public class Scene1 extends JPanel {
             if (player.isVisible() && !bomb.isDestroyed()) {
                 // Create rectangles for bombs
 
-                Rectangle bombRect = new Rectangle(
-                        bomb.getX(),
-                        bomb.getY(),
-                        bomb.getWidth(),
-                        bomb.getHeight());
+                // Rectangle bombRect = new Rectangle(
+                // bomb.getX(),
+                // bomb.getY(),
+                // bomb.getWidth(),
+                // bomb.getHeight());
 
-                // Check if rectangles intersect
-                if (playerRect.intersects(bombRect)) {
+                // // Check if rectangles intersect
+                // if (playerRect.intersects(bombRect)) {
+                // // Instead of instant game over, damage the player
+                // if (!player.isInvulnerable()) {
+                // player.takeDamage(2); // Bombs do 2 HP damage
+                // System.out.println("Player hit by enemy bomb for 2 damage!");
+                // System.out.println("Player Rect: " + playerRect);
+                // System.out.println("Bomb Rect: " + bombRect);
+                // }
+                // bomb.setDestroyed(true);
+                // }
+
+                if (bomb.collidesWith(player)) {
                     // Instead of instant game over, damage the player
                     if (!player.isInvulnerable()) {
                         player.takeDamage(2); // Bombs do 2 HP damage
+                        // play taking damage sound
+
+                        long now = System.currentTimeMillis();
+                        if (damageSound != null  && now - lastDamageSoundTime > 500) { // 500ms cooldown
+                            damageSound.stop(); // Stop if already playing, for rapid hits
+                            damageSound.play();
+                            lastDamageSoundTime = now;
+                        }
                         System.out.println("Player hit by enemy bomb for 2 damage!");
-                        System.out.println("Player Rect: " + playerRect);
-                        System.out.println("Bomb Rect: " + bombRect);
                     }
                     bomb.setDestroyed(true);
                 }
@@ -760,7 +870,7 @@ public class Scene1 extends JPanel {
         }
     }
 
-    private void doGameCycle() {
+    private void doGameCycle() throws UnsupportedAudioFileException, IOException, LineUnavailableException {
         // Only increment frame when not paused
         if (!isPaused) {
             frame++;
@@ -773,7 +883,12 @@ public class Scene1 extends JPanel {
 
         @Override
         public void actionPerformed(ActionEvent e) {
-            doGameCycle();
+            try {
+                doGameCycle();
+            } catch (UnsupportedAudioFileException | IOException | LineUnavailableException e1) {
+                // TODO Auto-generated catch block
+                e1.printStackTrace();
+            }
         }
     }
 
@@ -843,8 +958,8 @@ public class Scene1 extends JPanel {
 
     private void checkStage1Complete() {
         // Check if player has completed Stage 1
-        // if (deaths == NUMBER_OF_ROBOTS_TO_DESTROY) {
-        if (frame >= 30) { // debug condition for stage completion
+        if (deaths == NUMBER_OF_ROBOTS_TO_DESTROY) {
+            // if (frame >= 3000) { // debug condition for stage completion
             isGameWon = true;
             inGame = false;
             gameOverMessage = "Stage 1 Complete!";
@@ -908,12 +1023,14 @@ public class Scene1 extends JPanel {
 
                 if (enemy.isVisible()) {
                     if (enemy.collidesWith(player)) {
-                        // Enemy touched player directly - Game Over
-                        var ii = new Explosion(player.getX(), player.getY());
-                        player.setImage(ii.getImage());
-                        player.setDying(true);
-                        triggerGameOver("Game Over");
-                        return;
+                        player.takeDamage(2);
+                        // play taking damage sound
+                        long now = System.currentTimeMillis();
+                        if (damageSound != null  && now - lastDamageSoundTime > 500) { // 500ms cooldown
+                            damageSound.stop(); // Stop if already playing, for rapid hits
+                            damageSound.play();
+                            lastDamageSoundTime = now;
+                        }
                     }
 
                 }
@@ -939,6 +1056,14 @@ public class Scene1 extends JPanel {
             System.err.println("Error stopping audio: " + e.getMessage());
         }
 
+        // Play game over sound effect
+        try {
+            AudioPlayer gameOverSound = new AudioPlayer("src/audio/over.wav");
+            gameOverSound.play();
+        } catch (Exception e) {
+            System.err.println("Game over sound error: " + e.getMessage());
+        }
+
         // Print message for debugging
         System.out.println("Game Over: " + endMessage);
     }
@@ -951,6 +1076,8 @@ public class Scene1 extends JPanel {
         frame = 0;
         deaths = 0;
         direction = -1;
+        resetGlobalSpeed();
+        scrollSpeed = defaultScrollSpeed; // Reset scroll speed
 
         // Reset spawn counters
         tumbleweedSpawnCounter = 0;

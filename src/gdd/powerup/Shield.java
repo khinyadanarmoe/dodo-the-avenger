@@ -23,11 +23,11 @@ public class Shield extends PowerUp {
         this.setImage(scaledImage);
     }
 
-    @Override
-    public void act() {
-        // Move left at same speed as other powerups
-        this.x -= 2;
-    }
+    // @Override
+    // public void act() {
+    //     // Move left at same speed as other powerups
+    //     this.x -= 2;
+    // }
 
     @Override
     public void upgrade(Player player) {

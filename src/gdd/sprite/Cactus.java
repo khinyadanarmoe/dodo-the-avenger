@@ -28,20 +28,20 @@ public class Cactus extends Obstacle {
         setImage(scaledImage);
     }
 
-    @Override
-    public void act() {
-        // Cactus moves slower than tumbleweed
-        this.x -= 2;
+    // @Override
+    // public void act() {
+    //     // Cactus moves slower than tumbleweed
+    //     this.x -= 2;
         
-        // Cactus stays at ground level (no bouncing)
-        // You could add slight swaying animation here
+    //     // Cactus stays at ground level (no bouncing)
+    //     // You could add slight swaying animation here
         
-        // Remove when off-screen
-        if (this.x < -50) {
-            this.visible = false;
-        }
+    //     // Remove when off-screen
+    //     if (this.x < -50) {
+    //         this.visible = false;
+    //     }
         
-    }
+    // }
 
    
 

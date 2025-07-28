@@ -3,6 +3,8 @@ package gdd.sprite;
 import static gdd.Global.*;
 import javax.swing.ImageIcon;
 
+import gdd.Global;
+
 public class Tumbleweed extends Obstacle {
 
     private int rotationAngle = 0;
@@ -32,7 +34,7 @@ public class Tumbleweed extends Obstacle {
     @Override
     public void act() {
         // Tumbleweed-specific movement
-        this.x -= 3; // Move left faster than default obstacles
+        this.x -= globalSpeed + 1; // Move left faster than default obstacles
         
         // Add rolling/bouncing effect
         bounceHeight += bounceDirection;
@@ -48,10 +50,10 @@ public class Tumbleweed extends Obstacle {
         // Rotation effect (visual only - for future animation)
         rotationAngle = (rotationAngle + 5) % 360;
         
-        // Remove when off-screen
-        if (this.x < -50) {
-            this.visible = false;
-        }
+        // // Remove when off-screen
+        // if (this.x < -50) {
+        //     this.visible = false;
+        // }
     }
 
     @Override

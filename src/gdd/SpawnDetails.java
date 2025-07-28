@@ -22,6 +22,10 @@ public class SpawnDetails {
       return 300 + (int)(Math.random() * 500); // Random time between 3 to 8 seconds
     }
 
+    public static int getVeryLongSpawnTime() {
+      return 600 + (int)(Math.random() * 1000);
+    }
+
     public static int getSpawnY() {
       // Returns a random Y position between the ground and the board height
       int min = 10;

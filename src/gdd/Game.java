@@ -4,6 +4,9 @@ import gdd.scene.Scene1;
 import gdd.scene.TitleScene;
 import gdd.scene.Cutscene;
 import gdd.scene.FinalScene;
+
+import static gdd.Global.resetGlobalSpeed;
+
 import javax.swing.JFrame;
 
 public class Game extends JFrame  {
@@ -25,7 +28,7 @@ public class Game extends JFrame  {
 
     private void initUI() {
 
-        setTitle("DoDo");
+        setTitle("Dodo the Avenger");
         setSize(Global.BOARD_WIDTH, Global.BOARD_HEIGHT);
 
         setDefaultCloseOperation(EXIT_ON_CLOSE);
@@ -72,5 +75,6 @@ public class Game extends JFrame  {
         finalScene.start();
         revalidate();
         repaint();
+        resetGlobalSpeed();
     }
 }

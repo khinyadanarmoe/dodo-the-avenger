@@ -7,8 +7,22 @@ public class Shot extends Sprite {
 
     private static final int H_SPACE = 20;
     private static final int V_SPACE = 1;
+    private int shotSpeed = 10; // Speed of the shot
 
-    public Shot() {
+    public Shot(int direction, Player player) {
+        // Initialize shot direction based on player direction
+        if (direction == Player.DIR_LEFT) {
+            shotSpeed = -shotSpeed; // Move left
+        } else if (direction == Player.DIR_RIGHT) {
+            shotSpeed = shotSpeed; // Move right
+        } else {
+            throw new IllegalArgumentException("Invalid direction: " + direction);
+        }
+        // Initialize shot position based on player position
+        int x = player.getX() + (direction == Player.DIR_LEFT ? -H_SPACE : H_SPACE);
+        int y = player.getY() + (player.getWidth() / 2);
+        // Call the initShot method to set up the shot
+        initShot(x, y);
     }
 
     public Shot(int x, int y) {
@@ -34,7 +48,18 @@ public class Shot extends Sprite {
 
     @Override
     public void act() {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'act'");
+        this.x += shotSpeed;
+        // Remove shot when it goes off-screen
+        if (this.x > BOARD_WIDTH || this.y < 0) {
+            this.visible = false;
+        }
+    }
+
+    public void act(int direction) {
+        this.x += shotSpeed * direction;
+        // Remove shot when it goes off-screen
+        if (this.x > BOARD_WIDTH || this.y < 0) {
+            this.visible = false;
+        }
     }
 }

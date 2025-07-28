@@ -32,7 +32,7 @@ public abstract class BaseGameScene extends JPanel {
     protected Timer timer;
     protected final Game game;
     protected AudioPlayer audioPlayer;
-    
+
     // Player and game state
     protected Player player;
     protected boolean inGame = true;
@@ -47,9 +47,13 @@ public abstract class BaseGameScene extends JPanel {
 
     // Abstract methods that subclasses must implement
     protected abstract void gameInit();
+
     protected abstract void update();
+
     protected abstract void drawScene(Graphics g);
+
     protected abstract String getAudioFilePath();
+
     protected abstract KeyAdapter createKeyAdapter();
 
     // Common initialization
@@ -82,7 +86,7 @@ public abstract class BaseGameScene extends JPanel {
     protected void initAudio() {
         try {
             String filePath = getAudioFilePath();
-            audioPlayer = new AudioPlayer(filePath);
+            audioPlayer = new AudioPlayer(filePath, true); // Looping audio
             audioPlayer.play();
         } catch (Exception e) {
             System.err.println("Error initializing audio: " + e.getMessage());
@@ -99,7 +103,7 @@ public abstract class BaseGameScene extends JPanel {
         if (inGame) {
             drawScene(g);
             drawHUD(g);
-            
+
             if (isPaused) {
                 drawPauseOverlay(g);
             }
@@ -124,30 +128,31 @@ public abstract class BaseGameScene extends JPanel {
 
     // Common HP bar implementation
     protected void drawHPBar(Graphics g) {
-        if (player == null) return;
-        
+        if (player == null)
+            return;
+
         // HP Bar dimensions and position (top right)
         int barWidth = 200;
         int barHeight = 20;
         int barX = BOARD_WIDTH - barWidth - 20;
         int barY = 80;
-        
+
         // Get player HP
         int currentHP = player.getCurrentHP();
         int maxHP = player.getMaxHP();
-        
+
         // Calculate HP percentage
         double hpPercentage = (double) currentHP / maxHP;
         int fillWidth = (int) (barWidth * hpPercentage);
-        
+
         // Draw HP bar background
         g.setColor(new Color(50, 50, 50));
         g.fillRect(barX, barY, barWidth, barHeight);
-        
+
         // Draw HP bar border
         g.setColor(Color.WHITE);
         g.drawRect(barX, barY, barWidth, barHeight);
-        
+
         // Draw HP fill based on percentage
         if (hpPercentage > 0.6) {
             g.setColor(Color.GREEN);
@@ -156,24 +161,24 @@ public abstract class BaseGameScene extends JPanel {
         } else {
             g.setColor(Color.RED);
         }
-        
+
         if (fillWidth > 0) {
             g.fillRect(barX + 1, barY + 1, fillWidth - 2, barHeight - 2);
         }
-        
+
         // Draw HP text
         g.setColor(Color.WHITE);
         g.setFont(new Font("Arial", Font.BOLD, 12));
         String hpText = "DODO HP: " + currentHP + "/" + maxHP;
         g.drawString(hpText, barX, barY + barHeight + 15);
-        
+
         // Draw shield indicator
         if (player.isShieldActive()) {
             g.setColor(Color.BLUE);
             g.setFont(new Font("Arial", Font.BOLD, 12));
             String shieldText = "SHIELD: " + String.format("%.1f", player.getShieldTimer() / 60.0f) + "s";
             g.drawString(shieldText, barX, barY - 5);
-            
+
             // Draw shield border around HP bar
             g.setColor(Color.BLUE);
             g.drawRect(barX - 2, barY - 2, barWidth + 4, barHeight + 4);
@@ -257,7 +262,7 @@ public abstract class BaseGameScene extends JPanel {
     protected void togglePause() {
         isPaused = !isPaused;
         System.out.println(getSceneName() + " pause toggled: isPaused = " + isPaused);
-        
+
         if (isPaused) {
             try {
                 if (audioPlayer != null) {
@@ -275,7 +280,7 @@ public abstract class BaseGameScene extends JPanel {
                 System.err.println("Error resuming audio: " + e.getMessage());
             }
         }
-        
+
         repaint();
     }
 
@@ -283,11 +288,18 @@ public abstract class BaseGameScene extends JPanel {
     protected void triggerVictory() {
         inGame = false;
         isVictory = true;
-        
+
+        try {
+            AudioPlayer winSound = new AudioPlayer("src/audio/win.wav");
+            winSound.play();
+        } catch (Exception e) {
+            System.err.println("Victory sound error: " + e.getMessage());
+        }
+
         if (timer != null && timer.isRunning()) {
             timer.stop();
         }
-        
+
         try {
             if (audioPlayer != null) {
                 audioPlayer.stop();
@@ -295,7 +307,7 @@ public abstract class BaseGameScene extends JPanel {
         } catch (Exception e) {
             System.err.println("Error stopping audio: " + e.getMessage());
         }
-        
+
         System.out.println(getSceneName() + " victory!");
     }
 
@@ -305,11 +317,19 @@ public abstract class BaseGameScene extends JPanel {
         isGameOver = true;
         isVictory = false;
         gameOverMessage = message;
-        
+
         if (timer != null && timer.isRunning()) {
             timer.stop();
         }
-        
+
+        // Play game over sound
+        try {
+            AudioPlayer gameOverSound = new AudioPlayer("src/audio/over.wav");
+            gameOverSound.play();
+        } catch (Exception e) {
+            System.err.println("Game over sound error: " + e.getMessage());
+        }
+
         try {
             if (audioPlayer != null) {
                 audioPlayer.stop();
@@ -317,7 +337,7 @@ public abstract class BaseGameScene extends JPanel {
         } catch (Exception e) {
             System.err.println("Error stopping audio: " + e.getMessage());
         }
-        
+
         System.out.println("Game Over: " + message);
     }
 
@@ -328,18 +348,23 @@ public abstract class BaseGameScene extends JPanel {
         isGameOver = false;
         isVictory = false;
         frame = 0;
-        
+
         gameInit();
         initAudio();
-        
+
         if (timer != null) {
             timer.start();
         }
     }
 
     // Methods for subclasses to override
-    protected String getSceneName() { return "SCENE"; }
-    protected String getVictoryMessage() { return "Level Complete!"; }
+    protected String getSceneName() {
+        return "SCENE";
+    }
+
+    protected String getVictoryMessage() {
+        return "Game Won!";
+    }
 
     // Common game cycle
     private class BaseGameCycle implements ActionListener {

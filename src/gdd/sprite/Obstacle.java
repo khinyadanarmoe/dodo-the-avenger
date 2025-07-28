@@ -1,5 +1,9 @@
 package gdd.sprite;
 
+import static gdd.Global.globalSpeed;
+
+import gdd.Global;
+
 public abstract class Obstacle extends Sprite {
 
     protected int health;
@@ -19,7 +23,7 @@ public abstract class Obstacle extends Sprite {
     @Override
     public void act() {
         // Default obstacle behavior - move left for side-scrolling
-        this.x -= 2;
+        this.x -= globalSpeed; // Move left by global speed
         
         // Remove obstacle when it goes off-screen
         if (this.x < -50) {

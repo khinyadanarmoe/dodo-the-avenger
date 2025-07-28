@@ -2,6 +2,7 @@ package gdd.sprite;
 
 import java.awt.Graphics2D;
 import java.awt.Image;
+import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
 
 abstract public class Sprite {
@@ -26,10 +27,28 @@ abstract public class Sprite {
         if (other == null || !this.isVisible() || !other.isVisible()) {
             return false;
         }
-        return this.getX() < other.getX() + other.getWidth()
-                && this.getX() + this.getWidth() > other.getX()
-                && this.getY() < other.getY() + other.getHeight()
-                && this.getY() + this.getHeight() > other.getY();
+
+        // Shrink both sprites' bounds by 30% (15% from each side)
+        double shrinkFactor = 0.3;
+        double thisShrinkW = this.getWidth() * shrinkFactor;
+        double thisShrinkH = this.getHeight() * shrinkFactor;
+        double otherShrinkW = other.getWidth() * shrinkFactor;
+        double otherShrinkH = other.getHeight() * shrinkFactor;
+
+        double thisX = this.getX() + thisShrinkW / 2;
+        double thisY = this.getY() + thisShrinkH / 2;
+        double thisW = this.getWidth() * (1 - shrinkFactor);
+        double thisH = this.getHeight() * (1 - shrinkFactor);
+
+        double otherX = other.getX() + otherShrinkW / 2;
+        double otherY = other.getY() + otherShrinkH / 2;
+        double otherW = other.getWidth() * (1 - shrinkFactor);
+        double otherH = other.getHeight() * (1 - shrinkFactor);
+
+        return thisX < otherX + otherW
+                && thisX + thisW > otherX
+                && thisY < otherY + otherH
+                && thisY + thisH > otherY;
     }
 
     public void die() {
@@ -38,6 +57,10 @@ abstract public class Sprite {
 
     public boolean isVisible() {
         return visible;
+    }
+
+    public void setVisibleFrames(int frames) {
+        this.visibleFrames = frames;
     }
 
     public void visibleCountDown() {
@@ -115,6 +138,10 @@ abstract public class Sprite {
         bGr.dispose();
 
         return bimage;
+    }
+
+    public Rectangle getBounds() {
+        return new Rectangle(x, y, getWidth(), getHeight());
     }
 }
 

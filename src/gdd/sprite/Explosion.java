@@ -6,6 +6,8 @@ import java.awt.Image;
 
 import javax.swing.ImageIcon;
 
+import gdd.AudioPlayer; // Add at the top
+
 public class Explosion extends Sprite {
 
 
@@ -27,6 +29,14 @@ public class Explosion extends Sprite {
                 ii.getIconHeight() * 3,
                 java.awt.Image.SCALE_SMOOTH);
         setImage(scaledImage);
+
+        // Play explosion sound
+        try {
+            AudioPlayer explosionSound = new AudioPlayer("src/audio/explosion.wav");
+            explosionSound.play();
+        } catch (Exception e) {
+            System.err.println("Explosion sound error: " + e.getMessage());
+        }
     }
 
     public Image getImage() {

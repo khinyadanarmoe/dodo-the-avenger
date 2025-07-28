@@ -51,7 +51,7 @@ public class Cutscene extends JPanel {
     private void initAudio() {
         try {
             // Use the same audio as Scene1 or add cutscene-specific audio
-            String filePath = "src/audio/scene1.wav";
+            String filePath = "src/audio/cutscene.wav";
             audioPlayer = new AudioPlayer(filePath);
             audioPlayer.play();
         } catch (Exception e) {
