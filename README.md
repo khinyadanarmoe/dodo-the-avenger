@@ -11,7 +11,7 @@
 ### 👥 Member List
 
 
-| Member ID | Role / Contribution        |
+| Member ID | Name                       |
 |-----------|----------------------------|
 | 6610918   | Nattasasi Nithiworanan     |
 | 6612128   | Khin Yadanar Moe           |
