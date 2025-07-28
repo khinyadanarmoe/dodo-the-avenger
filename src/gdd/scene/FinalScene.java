@@ -139,8 +139,8 @@ public class FinalScene extends BaseGameScene {
 
                         // Reduce boss HP by one when an enemy is destroyed
                         if (boss != null && !boss.isDead()) {
-                            boss.takeDamage(10);
-                            System.out.println("Boss HP reduced by 1! Current HP: " + boss.getCurrentHP());
+                            boss.takeDamage(2);
+                            System.out.println("Boss HP reduced by 2! Current HP: " + boss.getCurrentHP());
                         }
                     }
                 }

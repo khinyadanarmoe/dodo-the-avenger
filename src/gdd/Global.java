@@ -22,7 +22,7 @@ public class Global {
     public static final int  ROBOT_GAP = 30; // Gap between  ROBOTs
 
     public static final int GO_DOWN = 30; // Doubled from 15
-    public static final int NUMBER_OF_ROBOTS_TO_DESTROY = 5;
+    public static final int NUMBER_OF_ROBOTS_TO_DESTROY = 50;
     public static final int CHANCE = 5;
     public static final int DELAY = 17;
     public static final int PLAYER_WIDTH = 15; // Doubled from 15
